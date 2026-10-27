@@ -22,3 +22,9 @@ Browser checks used the real local EOD HTTP service and the real LMS HTTP servic
 The sample course text and synthetic demo candidates are not production learner data. Browser screenshots are retained in the ignored local `.probe/screenshots` folder. Full-page capture was unavailable; viewport captures were used.
 
 No production deployment, physical video playback compatibility, Docker build, backup restoration, or concurrent-room capacity certification is claimed. The CI workflow covers Windows and Ubuntu; its remote status must be checked after a push.
+
+## AnthroPrime brand alignment
+
+The LMS was visually aligned with anthroprime.com using its AP logo, locally hosted DM Sans and Cormorant Garamond fonts, exact ivory/navy/blue/gold palette, serif typography, angular blue hero panel and light/dark surfaces. Font license files are included with the assets.
+
+All 19 automated checks passed after adding the brand assets. The HTTP check also verifies that the font and logo are served with the correct content types. Browser checks confirmed loaded fonts and images, the exact dark background/accent tokens, theme persistence after reload, and no horizontal overflow in the dashboard or library at 390 × 844. Desktop was checked at 1280 × 900. Local evidence is in `.probe/screenshots/anthroprime-*`.

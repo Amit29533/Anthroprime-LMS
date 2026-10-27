@@ -29,7 +29,7 @@ const initials = (name) =>
     .slice(0, 2)
     .map((p) => p[0])
     .join("");
-const brand = `<span class="brand-mark">A<span>•</span></span><span>anthroprime<small>LEARNING</small></span>`;
+const brand = `<img class="brand-logo" src="/assets/anthroprime-logo.jpg" alt="" width="64" height="50"><span class="brand-name">Anthro<em>Prime</em><small>LEARNING · HUMAN FIRST</small></span>`;
 const isAdmin = () => user?.role === "admin";
 const empty = (title, text) =>
   `<div class="empty"><span class="empty-icon">${icon("book")}</span><h3>${esc(title)}</h3><p>${esc(text)}</p></div>`;
@@ -59,7 +59,7 @@ function shell(hash) {
     <div class="nav-caption">${admin ? "MANAGE LEARNING" : "YOUR WORKSPACE"}</div><nav aria-label="Primary navigation">${nav.map(([href, text, ico]) => `<a href="${href}" class="nav-item ${hash === href ? "active" : ""}" ${hash === href ? 'aria-current="page"' : ""}>${icon(ico)}<span>${text}</span>${hash === href ? '<span class="nav-dot"></span>' : ""}</a>`).join("")}</nav>
     <div class="sidebar-note">${icon("path")}<strong>Potential, in progress.</strong><p>Small steps. Stronger capabilities.</p><a href="${esc(eodUrl)}" target="_blank" rel="noopener">Assessment platform ${icon("external")}</a></div>
     <div class="sidebar-profile"><span class="avatar">${esc(initials(user.name))}</span><div><strong>${esc(user.name)}</strong><small>${admin ? "Learning administrator" : "Candidate workspace"}</small></div><button id="logout" title="Sign out" aria-label="Sign out">${icon("logout")}</button></div></aside>
-    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button><span>WORKSPACE</span><b>/</b><strong>${admin ? "Learning management" : "Personal development"}</strong></div><div class="topbar-tools"><span class="connected"><i></i>EOD connected</span><button id="theme" class="round-button" aria-label="Switch light and dark theme">◐</button><span class="avatar small-avatar">${esc(initials(user.name))}</span></div></header><main id="main-content" tabindex="-1"><div class="page-loading">Loading your workspace…</div></main><footer class="footer"><span>Anthroprime Learning</span><span>Learn with purpose. Grow with evidence.</span></footer></div></div>`;
+    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button><span>WORKSPACE</span><b>/</b><strong>${admin ? "Learning management" : "Personal development"}</strong></div><div class="topbar-tools"><span class="connected"><i></i>EOD connected</span><button id="theme" class="round-button" aria-label="Switch light and dark theme">◐</button><span class="avatar small-avatar">${esc(initials(user.name))}</span></div></header><main id="main-content" tabindex="-1"><div class="page-loading">Loading your workspace…</div></main><footer class="footer"><span>AnthroPrime Learning</span><span>Learn with purpose. Grow with evidence.</span></footer></div></div>`;
   document.getElementById("logout").onclick = (event) =>
     action(event.currentTarget, async () => {
       await api("/logout", { method: "POST" });
@@ -70,7 +70,13 @@ function shell(hash) {
     const next =
       document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
-    localStorage.setItem("lms-theme", next);
+    document.querySelector('meta[name="theme-color"]').content =
+      next === "dark" ? "#15161b" : "#f5f4f1";
+    try {
+      localStorage.setItem("lms-theme", next);
+    } catch {
+      /* Optional persistence. */
+    }
   };
   document.getElementById("mobile-menu").onclick = (event) => {
     const open = document.getElementById("sidebar").classList.toggle("open");
@@ -165,7 +171,7 @@ function learnerView(view, data, hash) {
     return;
   }
   if (hash === "#/home") {
-    view.innerHTML += `<section class="learning-hero"><div><span class="eyebrow">A CLEARER PATH FORWARD</span><h2>${continueCourse ? "Keep your momentum." : "Your next chapter\nstarts here."}</h2><p>${continueCourse ? esc(continueCourse.course.title) : "Thoughtful courses. Small moments of practice. Meaningful progress, one lesson at a time."}</p>${continueCourse ? `<button class="button warm" data-open="${continueCourse.id}">Continue learning ${icon("arrow")}</button><div class="hero-progress">${progress(continueCourse.progress.percent)}<span>${continueCourse.progress.percent}% complete</span></div>` : '<a class="button warm" href="#/catalog">Find your next course ' + icon("arrow") + "</a>"}</div><div class="hero-illustration" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="hero-book"><span>GROWTH<br>IN<br>PROGRESS.</span><i>anthroprime</i></div><span class="orbit-dot dot-one"></span><span class="orbit-dot dot-two"></span></div></section>
+    view.innerHTML += `<section class="learning-hero"><div><span class="eyebrow">A CLEARER PATH FORWARD</span><h2>${continueCourse ? "Keep your<br><em>momentum.</em>" : "Your next chapter<br>starts <em>here.</em>"}</h2><p>${continueCourse ? esc(continueCourse.course.title) : "Thoughtful courses. Small moments of practice. Meaningful progress, one lesson at a time."}</p>${continueCourse ? `<button class="button warm" data-open="${continueCourse.id}">Continue learning ${icon("arrow")}</button><div class="hero-progress">${progress(continueCourse.progress.percent)}<span>${continueCourse.progress.percent}% complete</span></div>` : '<a class="button warm" href="#/catalog">Find your next course ' + icon("arrow") + "</a>"}</div><div class="hero-illustration" aria-hidden="true"><div class="observatory-topline">YOUR CONNECTED LEARNING JOURNEY</div><svg class="observatory-network" viewBox="0 0 340 260" fill="none"><path class="network-line" d="M40 55 116 28 214 46 300 80 273 170 181 220 75 183 40 55 168 112 300 80M116 28 168 112 214 46 273 170 168 112 75 183 181 220M40 55 214 46M75 183 273 170M116 28 181 220"/><g class="network-dot"><circle cx="40" cy="55" r="2"/><circle cx="116" cy="28" r="2.5"/><circle cx="214" cy="46" r="2"/><circle cx="300" cy="80" r="2"/><circle cx="273" cy="170" r="2"/><circle cx="181" cy="220" r="2.5"/><circle cx="75" cy="183" r="2"/><circle cx="62" cy="110" r="1.3"/><circle cx="251" cy="110" r="1.3"/><circle cx="150" cy="60" r="1.3"/><circle cx="210" cy="190" r="1.3"/></g></svg><div class="observatory-orbit"></div><div class="observatory-orbit second"></div><div class="observatory-core"><img src="/assets/anthroprime-logo.jpg" alt="" width="67" height="53"></div><span class="observatory-node node-learn">${icon("book")} Learn <small>01</small></span><span class="observatory-node node-practice">${icon("quiz")} Practice <small>02</small></span><span class="observatory-node node-grow">${icon("chart")} Grow <small>03</small></span><div class="observatory-bottomline"><span>HUMAN POTENTIAL</span><span>CONNECTED CAPABILITY</span></div></div></section>
     <div class="stats"><div><span class="stat-icon">${icon("book")}</span><strong>${active.length}</strong><span>Courses in progress</span></div><div><span class="stat-icon green-text">${icon("check")}</span><strong>${completed.length}</strong><span>Courses completed</span></div><div><span class="stat-icon gold-text">${icon("path")}</span><strong>${enrolled.reduce((sum, e) => sum + e.progress.completed, 0)}</strong><span>Lessons completed</span></div></div>`;
   }
   if (hash === "#/catalog") {
@@ -572,12 +578,6 @@ document.querySelector(".skip").onclick = (event) => {
   event.preventDefault();
   document.getElementById("main-content")?.focus();
 };
-try {
-  document.documentElement.dataset.theme =
-    localStorage.getItem("lms-theme") || "light";
-} catch {
-  /* Default theme works without storage. */
-}
 try {
   const session = await api("/session");
   user = session.user;

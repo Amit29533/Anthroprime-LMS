@@ -80,6 +80,12 @@ test("real HTTP transport: shared login, cookie protection, CSRF, limits, header
     );
     assert.equal((await fetch(`${origin}/.env`)).status, 404);
     assert.equal((await fetch(`${origin}/src/app.mjs`)).status, 404);
+    const font = await fetch(`${origin}/assets/fonts/dm-sans-latin.woff2`);
+    assert.equal(font.status, 200);
+    assert.equal(font.headers.get("content-type"), "font/woff2");
+    const logo = await fetch(`${origin}/assets/anthroprime-logo.jpg`);
+    assert.equal(logo.status, 200);
+    assert.equal(logo.headers.get("content-type"), "image/jpeg");
     const body = JSON.stringify({
       username: "candidate",
       password: "correct-password",
