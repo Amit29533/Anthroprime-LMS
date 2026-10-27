@@ -1,0 +1,29 @@
+name: Verify LMS
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check the real EOD contract
+        uses: actions/checkout@v4
+        with:
+          repository: Amit29533/EOD-simple
+          ref: 11099b1686c40af41c3c13dfcb3161d82f0a809d
+          path: .probe/eod
+          persist-credentials: false
+      - run: npm test
+        env:
+          EOD_REPO: ${{ github.workspace }}/.probe/eod
+      - run: npm audit --audit-level=moderate
