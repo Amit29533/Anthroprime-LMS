@@ -1,0 +1,97 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { world, tokens, courseInput } from "./helpers.mjs";
+import { lessonsIn, validateCourse, learnerCourse, gradePractice } from "../src/domain/learning.mjs";
+import { invitationId } from "../src/domain/training.mjs";
+import { rsaCourse } from "../content/rsa-course.mjs";
+
+test("RSA content: 12 modules, 48 substantive lessons, exactly three MCQs each; two correct passes", () => {
+  const course = rsaCourse("rsa");
+  assert.equal(validateCourse(course), null);
+  assert.equal(course.curriculum.length, 12);
+  const lessons = lessonsIn(course);
+  assert.equal(lessons.length, 48);
+  const positions = new Set();
+  for (const lesson of lessons) {
+    assert.ok(lesson.body.split(/\s+/).length > 150, lesson.title);
+    assert.equal(lesson.quiz.questions.length, 3);
+    assert.doesNotMatch(lesson.body, /facilitator.only|ANSWER KEY|HIDDEN FACTS/i);
+    assert.match(lesson.body, /Source:/);
+    const answers = Object.fromEntries(lesson.quiz.questions.map((q) => [q.id, q.correct_option_id]));
+    positions.add(lesson.quiz.questions[0].correct_option_id);
+    const wrong = (q) => q.options.find((o) => o.id !== q.correct_option_id).id;
+    answers[lesson.quiz.questions[0].id] = wrong(lesson.quiz.questions[0]);
+    assert.equal(gradePractice(lesson.quiz, answers).passed, true);
+    answers[lesson.quiz.questions[1].id] = wrong(lesson.quiz.questions[1]);
+    assert.equal(gradePractice(lesson.quiz, answers).passed, false);
+  }
+  assert.equal(positions.size, 4, "correct answers do not follow one source-deck position");
+  const learner = JSON.stringify(learnerCourse(course));
+  assert.doesNotMatch(learner, /"correct_option_id"\s*:|"explanation"\s*:/);
+});
+
+test("invitation-only access: authentication, live revocation, pending email claim, identity binding and admin controls", async (t) => {
+  const w = world(t, { invited: false });
+  const login = () => w.app({ method: "POST", path: "/login", body: { username: "candidate", password: "correct-password" } });
+  assert.equal((await login()).status, 403);
+  assert.equal((await w.call("candidate", "GET", "/session")).status, 403);
+  assert.equal((await w.call("candidate", "GET", "/learn")).status, 403);
+  assert.equal((await w.call("candidate", "POST", "/admin/training/invitations", { email: "rohit@example.test" })).status, 403);
+  assert.equal((await w.call("admin", "POST", "/admin/training/invitations", { email: "bad" })).status, 400);
+  const invited = await w.call("admin", "POST", "/admin/training/invitations", { email: " ROHIT@example.test " });
+  assert.equal(invited.status, 200);
+  assert.equal(w.store.list("enrollments").length, 0, "invitation must not assign a course");
+  assert.equal((await login()).status, 200);
+  const id = invited.body.invitation.id;
+  assert.ok(w.store.get("invitations", id).first_access_at);
+  await w.call("admin", "PUT", `/admin/training/invitations/${id}`, { status: "revoked" });
+  const denied = await w.call("candidate", "GET", "/learn");
+  assert.equal(denied.status, 403);
+  assert.match(denied.headers["set-cookie"], /Max-Age=0/);
+  await w.call("admin", "PUT", `/admin/training/invitations/${id}`, { status: "active" });
+  assert.equal((await w.call("candidate", "GET", "/learn")).status, 200);
+  const user = w.fixture.users[tokens.candidate];
+  user.email = "new@example.test";
+  assert.equal((await w.call("candidate", "GET", "/learn")).status, 403, "email changes do not inherit old access");
+  const pending = await w.call("admin", "POST", "/admin/training/invitations", { email: "future@example.test" });
+  assert.equal(pending.body.invitation.user_id, "");
+  user.email = "future@example.test";
+  assert.equal((await w.call("candidate", "GET", "/learn")).status, 200);
+  assert.equal(w.store.get("invitations", invitationId(user.email)).user_id, user.id);
+  user.id = "replacement-account";
+  assert.equal((await w.call("candidate", "GET", "/learn")).status, 403, "reusing an email must not take over a bound invitation");
+});
+
+test("inline lesson checks cannot be bypassed; retry and module progress keep first, best and latest scores", async (t) => {
+  const w = world(t);
+  const input = courseInput();
+  const check = structuredClone(input.curriculum[0].lessons[1].quiz);
+  check.pass_percent = 66;
+  check.questions = Array.from({ length: 3 }, (_, i) => ({ ...check.questions[0], id: `q${i}` }));
+  input.curriculum[0].lessons[0].quiz = check;
+  const course = await w.makeCourse(input);
+  const enrolled = await w.enroll(course);
+  const id = enrolled.id;
+  assert.equal((await w.call("candidate", "POST", `/enrollments/${id}/complete`, { lesson_id: "reading" })).status, 409);
+  assert.equal((await w.call("candidate", "POST", `/enrollments/${id}/quiz`, { lesson_id: "practice", answers: { "q-one": "a" } })).status, 409);
+  const submit = (answers) => w.call("candidate", "POST", `/enrollments/${id}/quiz`, { lesson_id: "reading", answers });
+  const failed = await submit({ q0: "a", q1: "b", q2: "b" });
+  assert.equal(failed.body.result.passed, false);
+  assert.equal(failed.body.enrollment.progress.completed, 0);
+  const passed = await submit({ q0: "a", q1: "a", q2: "b" });
+  assert.equal(passed.body.result.passed, true);
+  assert.equal(passed.body.enrollment.progress.percent, 50);
+  await submit({ q0: "b", q1: "b", q2: "b" });
+  const current = (await w.call("candidate", "GET", `/enrollments/${id}`)).body;
+  assert.equal(current.training.lessons[0].first_percent, 33);
+  assert.equal(current.training.lessons[0].best_percent, 67);
+  assert.equal(current.training.lessons[0].latest_percent, 0);
+  assert.equal(current.training.lessons[0].attempts, 3);
+  assert.equal(current.training.modules[0].percent, 50);
+  assert.equal(current.enrollment.progress.percent, 50, "failed retries cannot erase passed progress");
+  assert.doesNotMatch(JSON.stringify(current.course), /correct_option_id|explanation/);
+  const dashboard = await w.call("admin", "GET", "/admin/training");
+  assert.equal(dashboard.body.candidates.find((c) => c.id === "candidate-one").enrollments[0].training.lessons[0].best_percent, 67);
+  assert.equal((await w.app({ method: "GET", path: "/integration/training", headers: { authorization: `Bearer ${tokens.candidate}` } })).status, 403);
+  assert.equal((await w.app({ method: "GET", path: "/admin/training", headers: { authorization: `Bearer ${tokens.admin}` } })).status, 401, "bearer bridge does not apply to the browser API");
+});

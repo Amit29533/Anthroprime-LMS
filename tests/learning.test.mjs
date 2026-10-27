@@ -312,6 +312,13 @@ test("path enrollment freezes order and enrolls all courses atomically", async (
   assert.equal(w.store.list("path_enrollments").length, 1);
   const library = await w.call("candidate", "GET", "/learn");
   assert.equal(library.body.path_enrollments[0].percent, 0);
+  w.eod.learningContext = async () => ({ candidate: w.fixture.candidates[0], reports: new Map() });
+  w.store.update("paths", path.id, { title: "Changed path", status: "archived" });
+  w.store.update("courses", b.id, { title: "Changed course", status: "archived" });
+  const assignedOnly = await w.call("candidate", "GET", "/learn");
+  assert.equal(assignedOnly.body.paths[0].title, path.title, "assigned paths remain discoverable without a finalized report");
+  assert.deepEqual(assignedOnly.body.paths[0].courses.map((c) => c.id), [b.id, a.id]);
+  assert.equal(assignedOnly.body.paths[0].courses[0].title, b.title, "library preserves the assigned course versions");
   const invalid = await w.call("admin", "POST", "/admin/paths", {
     request_id: "invalid-path",
     title: "Invalid path",

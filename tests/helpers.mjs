@@ -3,6 +3,7 @@ import { createStore } from "../src/store.mjs";
 import { createSessions } from "../src/session.mjs";
 import { createEodClient } from "../src/integrations/eod.mjs";
 import { createApp } from "../src/app.mjs";
+import { invitationId } from "../src/domain/training.mjs";
 
 export const tokens = {
   admin: "a".repeat(64),
@@ -20,6 +21,7 @@ export function eodFixture() {
     },
     [tokens.candidate]: {
       id: "user-one",
+      email: "rohit@example.test",
       name: "Rohit Verma",
       candidate_id: "candidate-one",
       role: "candidate",
@@ -27,6 +29,7 @@ export function eodFixture() {
     },
     [tokens.other]: {
       id: "user-two",
+      email: "priya@example.test",
       name: "Priya Student",
       candidate_id: "candidate-two",
       role: "candidate",
@@ -103,6 +106,7 @@ export function eodFixture() {
         ],
         questions: [{ correct_option_ids: ["SECRET"] }],
       });
+    if (path === "/admin/users") return result({ users: Object.values(users), total: Object.values(users).length });
     if (path === "/admin/candidates")
       return result({ candidates, total: candidates.length });
     if (path === "/admin/assessments" && method === "POST") {
@@ -204,13 +208,14 @@ export function courseInput(overrides = {}) {
     ...overrides,
   };
 }
-export function world(t) {
+export function world(t, { invited = true } = {}) {
   const fixture = eodFixture();
   const eod = createEodClient({
     apiUrl: "https://assessment.example/api",
     fetcher: fixture.fetcher,
   });
   const store = createStore(":memory:", eod.instance);
+  if (invited) for (const u of Object.values(fixture.users).filter((u) => u.role === "candidate")) store.insert("invitations", { id: invitationId(u.email), email: u.email, user_id: u.id, candidate_id: u.candidate_id, status: "active" });
   const sessions = createSessions({ key: "1".repeat(64) });
   const app = createApp({ store, sessions, eod });
   t.after(() => store.close());

@@ -1,0 +1,75 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { createStore } from "../src/store.mjs";
+import { createSessions } from "../src/session.mjs";
+import { createEodClient } from "../src/integrations/eod.mjs";
+import { createApp } from "../src/app.mjs";
+import { courseInput } from "./helpers.mjs";
+import { existsSync } from "node:fs";
+
+test("real ECOD Training Dashboard bridge: admin invite, separate assignment, candidate learning and revocation", { skip: !process.env.EOD_REPO }, async (t) => {
+  if (!existsSync(path.join(process.env.EOD_REPO, "src/api/handlers/training.mjs"))) {
+    t.skip("Training Dashboard contract requires the companion ECOD training changes; the older pinned ECOD revision supports only the existing assessment contract.");
+    return;
+  }
+  const { makeWorld } = await import(pathToFileURL(path.join(process.env.EOD_REPO, "tests/helpers/world.mjs")).href);
+  const w = await makeWorld({ t, mcq: 1, open: 0 });
+  const candidate = await w.candidateUser("training.integration", { allocate: false });
+  await w.store.update("users", candidate.user.id, { email: "training@example.test" });
+  const eod = createEodClient({ apiUrl: "https://ecod-contract.example/api", fetcher: async (url, options) => {
+    const target = new URL(url);
+    const r = await w.app({ method: options.method, path: target.pathname.replace(/^\/api/, ""), query: Object.fromEntries(target.searchParams), headers: options.headers, body: options.body ? JSON.parse(options.body) : undefined });
+    return new Response(JSON.stringify(r.body), { status: r.status });
+  }});
+  const store = createStore(":memory:", eod.instance);
+  t.after(() => store.close());
+  const sessions = createSessions({ key: "8".repeat(64) });
+  const lms = createApp({ store, eod, sessions });
+  const callLms = (token, method, route, body = {}) => lms({ method, path: route, body, headers: { cookie: sessions.issue(token).split(";")[0] } });
+  const oldFetch = globalThis.fetch;
+  const oldUrl = process.env.LMS_WEB_URL;
+  process.env.LMS_WEB_URL = "https://training-contract.example";
+  let forwards = 0;
+  globalThis.fetch = async (url, options) => {
+    const target = new URL(url);
+    assert.equal(target.origin, "https://training-contract.example");
+    assert.equal(options.redirect, "error");
+    assert.equal(options.headers.authorization, `Bearer ${w.tok}`);
+    forwards++;
+    const r = await lms({ method: options.method, path: target.pathname.replace(/^\/api/, ""), headers: options.headers, body: options.body ? JSON.parse(options.body) : {} });
+    return new Response(JSON.stringify(r.body), { status: r.status });
+  };
+  t.after(() => { globalThis.fetch = oldFetch; if (oldUrl === undefined) delete process.env.LMS_WEB_URL; else process.env.LMS_WEB_URL = oldUrl; });
+  const portal = (method, route, body = {}, token = w.tok) => w.call(method, route, { token, body });
+  const initial = await portal("GET", "/admin/training");
+  assert.equal(initial.status, 200);
+  assert.equal(initial.body.candidates[0].access, "not_invited");
+  const before = forwards;
+  assert.equal((await portal("GET", "/admin/training", {}, candidate.token)).status, 403);
+  assert.equal(forwards, before, "candidate requests never forward admin tokens or read the dashboard");
+  assert.equal((await callLms(candidate.token, "GET", "/learn")).status, 403);
+  const invitation = await portal("POST", "/admin/training/invitations", { email: "Training@example.test" });
+  assert.equal(invitation.status, 200, JSON.stringify(invitation.body));
+  assert.equal(store.list("enrollments").length, 0);
+  const made = await callLms(w.tok, "POST", "/admin/courses", courseInput({ role_id: w.role.id, competency_ids: [w.c1.id] }));
+  assert.equal(made.status, 200);
+  const assigned = await portal("POST", "/admin/training/assign", { kind: "course", id: made.body.course.id, candidate_id: candidate.cand.id });
+  assert.equal(assigned.status, 200, JSON.stringify(assigned.body));
+  const id = assigned.body.enrollment.id;
+  const learner = await callLms(candidate.token, "GET", `/enrollments/${id}`);
+  assert.equal(learner.status, 200, "an invitation and assignment work before a finalized baseline report exists");
+  assert.doesNotMatch(JSON.stringify(learner.body.course), /"correct_option_id"\s*:/);
+  await callLms(candidate.token, "POST", `/enrollments/${id}/complete`, { lesson_id: "reading" });
+  const live = await portal("GET", "/admin/training");
+  assert.equal(live.body.candidates[0].enrollments[0].progress.percent, 50);
+  assert.equal(live.body.candidates[0].enrollments[0].training.modules[0].completed, 1);
+  assert.doesNotMatch(JSON.stringify(live.body), /"correct_option_id"\s*:|password_hash|"token"\s*:/);
+  await portal("PUT", `/admin/training/invitations/${invitation.body.invitation.id}`, { status: "revoked" });
+  assert.equal((await callLms(candidate.token, "GET", `/enrollments/${id}`)).status, 403);
+  assert.equal(store.get("enrollments", id).progress.reading.completed_at.length > 0, true);
+  globalThis.fetch = async () => { throw new Error("offline"); };
+  assert.equal((await portal("GET", "/admin/training")).status, 503);
+  assert.equal((await w.call("GET", "/auth/me", { token: w.tok })).status, 200, "LMS outage does not invalidate ECOD login");
+});

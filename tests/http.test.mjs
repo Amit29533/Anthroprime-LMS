@@ -80,6 +80,12 @@ test("real HTTP transport: shared login, cookie protection, CSRF, limits, header
     );
     assert.equal((await fetch(`${origin}/.env`)).status, 404);
     assert.equal((await fetch(`${origin}/src/app.mjs`)).status, 404);
+    const font = await fetch(`${origin}/assets/fonts/dm-sans-latin.woff2`);
+    assert.equal(font.status, 200);
+    assert.equal(font.headers.get("content-type"), "font/woff2");
+    const logo = await fetch(`${origin}/assets/anthroprime-logo.jpg`);
+    assert.equal(logo.status, 200);
+    assert.equal(logo.headers.get("content-type"), "image/jpeg");
     const body = JSON.stringify({
       username: "candidate",
       password: "correct-password",
@@ -105,6 +111,9 @@ test("real HTTP transport: shared login, cookie protection, CSRF, limits, header
       403,
       "custom request header required",
     );
+    const admin = await fetch(`${origin}/api/login`, { method: "POST", headers: { origin, "x-lms-request": "1" }, body: JSON.stringify({ username: "admin", password: "correct-password" }) });
+    const invite = await fetch(`${origin}/api/admin/training/invitations`, { method: "POST", headers: { origin, "x-lms-request": "1", cookie: admin.headers.get("set-cookie").split(";")[0] }, body: JSON.stringify({ email: "rohit@example.test" }) });
+    assert.equal(invite.status, 200);
     const login = await fetch(`${origin}/api/login`, {
       method: "POST",
       headers: { origin, "x-lms-request": "1" },

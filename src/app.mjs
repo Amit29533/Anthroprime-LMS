@@ -1,5 +1,6 @@
 import { randomUUID, createHash } from "node:crypto";
 import { HttpError } from "./integrations/eod.mjs";
+import { requireInvitation, registerTrainingRoutes, trainingProgress } from "./domain/training.mjs";
 import {
   validateCourse,
   courseFields,
@@ -134,6 +135,7 @@ export function createApp({ store, eod, sessions }) {
   route("GET", "/session", "public", async ({ token }) => {
     if (!token) return { user: null, eod_web_url: eod.webUrl };
     const me = await eod.call("/auth/me", { token });
+    requireInvitation(store, me);
     return { user: me.user, candidate: me.candidate, eod_web_url: eod.webUrl };
   });
   route("POST", "/login", "public", async ({ body }) => {
@@ -164,6 +166,11 @@ export function createApp({ store, eod, sessions }) {
       !/^[a-f0-9]{64}$/i.test(result.token)
     )
       fail(502, "The assessment platform returned an invalid session.");
+    try { requireInvitation(store, result); }
+    catch (err) {
+      await eod.call("/auth/logout", { token: result.token, method: "POST" }).catch(() => {});
+      throw err;
+    }
     return {
       _cookie: sessions.issue(result.token),
       user: result.user,
@@ -181,9 +188,14 @@ export function createApp({ store, eod, sessions }) {
     const enrollments = store.list("enrollments", {
       learner_id: learnerId(auth.user.candidate_id),
     });
-    const courses = store
+    const available = store
       .list("courses")
       .filter((c) => c.status === "published" && roleIds.has(c.role_id));
+    // Assigned learning remains discoverable before a finalized baseline and
+    // keeps its original title/content version after publication or archival.
+    const courseMap = new Map(available.map((c) => [c.id, c]));
+    for (const row of enrollments) courseMap.set(row.course_id, row.course_snapshot);
+    const courses = [...courseMap.values()];
     const paths = store
       .list("paths")
       .filter((p) => p.status === "published" && roleIds.has(p.role_id))
@@ -194,6 +206,13 @@ export function createApp({ store, eod, sessions }) {
           .filter(Boolean)
           .map(courseSummary),
       }));
+    const pathEnrollments = store.list("path_enrollments", { learner_id: learnerId(auth.user.candidate_id) });
+    const pathMap = new Map(paths.map((path) => [path.id, path]));
+    for (const row of pathEnrollments) pathMap.set(row.path_id, {
+      ...row.path_snapshot,
+      courses: row.enrollment_ids.map((id) => store.get("enrollments", id))
+        .filter(Boolean).map((e) => courseSummary(e.course_snapshot)),
+    });
     return {
       name: ctx.candidate.name,
       has_report: ctx.reports.size > 0,
@@ -207,12 +226,8 @@ export function createApp({ store, eod, sessions }) {
         ...summary(e),
         request: requestFor(e),
       })),
-      paths,
-      path_enrollments: store
-        .list("path_enrollments", {
-          learner_id: learnerId(auth.user.candidate_id),
-        })
-        .map(pathSummary),
+      paths: [...pathMap.values()],
+      path_enrollments: pathEnrollments.map(pathSummary),
       reports: [...ctx.reports.values()].map((a) => ({
         id: a.id,
         role_name: a.role_name,
@@ -271,6 +286,7 @@ export function createApp({ store, eod, sessions }) {
     return {
       enrollment: summary(row),
       course: learnerCourse(row.course_snapshot),
+      training: trainingProgress(row),
       completed_lessons: Object.keys(row.progress || {}),
       request: requestFor(row),
       eod_web_url: eod.webUrl,
@@ -288,7 +304,7 @@ export function createApp({ store, eod, sessions }) {
           (lesson) => lesson.id === body.lesson_id,
         );
         if (index < 0) fail(400, "Choose a lesson from your assigned course.");
-        if (lessons[index].kind === "quiz")
+        if (lessons[index].quiz)
           fail(409, "Submit the practice quiz to complete this lesson.");
         if (lessons.slice(0, index).some((lesson) => !row.progress[lesson.id]))
           fail(409, "Complete the earlier lessons first.");
@@ -311,6 +327,7 @@ export function createApp({ store, eod, sessions }) {
         return {
           enrollment: summary(updated),
           completed_lessons: Object.keys(updated.progress),
+          training: trainingProgress(updated),
         };
       }),
   );
@@ -323,7 +340,7 @@ export function createApp({ store, eod, sessions }) {
         const row = own(auth, params.id);
         const lessons = lessonsIn(row.course_snapshot);
         const index = lessons.findIndex(
-          (lesson) => lesson.id === body.lesson_id && lesson.kind === "quiz",
+          (lesson) => lesson.id === body.lesson_id && lesson.quiz,
         );
         if (index < 0)
           fail(400, "Choose a practice quiz from your assigned course.");
@@ -338,6 +355,8 @@ export function createApp({ store, eod, sessions }) {
           [body.lesson_id]: {
             count: (prior?.count || 0) + 1,
             percent: result.percent,
+            first_percent: prior?.count ? prior.first_percent ?? null : result.percent,
+            best_percent: Math.max(prior?.best_percent ?? prior?.percent ?? 0, result.percent),
             passed: result.passed,
             submitted_at: at,
           },
@@ -361,6 +380,7 @@ export function createApp({ store, eod, sessions }) {
           result,
           enrollment: summary(updated),
           completed_lessons: Object.keys(progress),
+          training: trainingProgress(updated),
         };
       }),
   );
@@ -389,10 +409,17 @@ export function createApp({ store, eod, sessions }) {
       }),
   );
   route("GET", "/admin/overview", "admin", async ({ auth }) => {
-    const [tracks, candidates] = await Promise.all([
+    const [tracks, candidates, users] = await Promise.all([
       eod.tracks(auth.token),
       eod.all("/admin/candidates", "candidates", auth.token),
+      eod.all("/admin/users", "users", auth.token),
     ]);
+    const eligible = (candidate) => {
+      const accounts = users.filter((u) => u.role === "candidate" && u.active !== false && u.candidate_id === candidate.id);
+      if (accounts.length !== 1) return false;
+      try { requireInvitation(store, { user: accounts[0], candidate }, { claim: false }); return true; }
+      catch (error) { if (error.status === 403) return false; throw error; }
+    };
     return {
       courses: store.list("courses").map(courseSummary),
       paths: store.list("paths"),
@@ -405,6 +432,7 @@ export function createApp({ store, eod, sessions }) {
           id: c.id,
           name: c.name,
           target_role_id: c.target_role_id,
+          training_access: eligible(c),
         })),
       audit: store.list("audit").slice(0, 30),
       eod_web_url: eod.webUrl,
@@ -575,6 +603,10 @@ export function createApp({ store, eod, sessions }) {
       (c) => c.id === body.candidate_id && !c.deleting,
     );
     if (!candidate) fail(404, "Candidate not found.");
+    const accounts = (await eod.all("/admin/users", "users", auth.token))
+      .filter((u) => u.role === "candidate" && u.active !== false && u.candidate_id === candidate.id);
+    if (accounts.length !== 1) fail(409, "Training assignment needs exactly one active ECOD candidate account.");
+    requireInvitation(store, { user: accounts[0], candidate }, { claim: false });
     const item = store.get(
       body.kind === "course" ? "courses" : "paths",
       body.id,
@@ -654,7 +686,14 @@ export function createApp({ store, eod, sessions }) {
       });
     },
   );
-  return async ({ method, path, headers = {}, body = {} }) => {
+  registerTrainingRoutes({ route, store, eod, summary });
+  // ECOD forwards the current administrator's token only to this bounded API.
+  for (const assignmentRoute of ["/integration/training/assign", "/admin/training/assign"]) route("POST", assignmentRoute, "admin", async ({ auth, body }) => {
+    const result = await appRequest({ method: "POST", path: "/admin/assign", headers: { cookie: sessions.issue(auth.token).split(";")[0] }, body });
+    if (result.status !== 200) fail(result.status, result.body.error);
+    return result.body;
+  });
+  const appRequest = async ({ method, path, headers = {}, body = {} }) => {
     try {
       if (typeof body !== "object" || body === null || Array.isArray(body))
         fail(400, "Send a JSON object.");
@@ -666,7 +705,9 @@ export function createApp({ store, eod, sessions }) {
       const params = Object.fromEntries(
         matched.keys.map((key, i) => [key, captures[i + 1]]),
       );
-      const token = sessions.read(headers.cookie);
+      const token = path.startsWith("/integration/training")
+        ? /^Bearer ([a-f0-9]{64})$/i.exec(headers.authorization || "")?.[1]
+        : sessions.read(headers.cookie);
       let auth = null;
       if (matched.role !== "public") {
         if (!token) fail(401, "Sign in with your EOD account to continue.");
@@ -677,6 +718,7 @@ export function createApp({ store, eod, sessions }) {
           fail(403, "This account does not have access to this workspace.");
         if (matched.role === "candidate" && !me.user.candidate_id)
           fail(409, "Your account needs a linked candidate profile.");
+        requireInvitation(store, me);
         auth = { token, user: me.user };
       }
       const result = await matched.handler({ auth, token, body, params });
@@ -692,12 +734,15 @@ export function createApp({ store, eod, sessions }) {
       return {
         status: err.status || 500,
         body: {
+          ...(path === "/session" ? { eod_web_url: eod.webUrl } : {}),
+          ...(err.code === "TRAINING_INVITE_REQUIRED" ? { code: err.code } : {}),
           error: err.status
             ? err.message
             : "Your change could not be saved. Please retry.",
         },
-        headers: err.status === 401 ? { "set-cookie": sessions.clear() } : {},
+        headers: err.status === 401 || err.code === "TRAINING_INVITE_REQUIRED" ? { "set-cookie": sessions.clear() } : {},
       };
     }
   };
+  return appRequest;
 }

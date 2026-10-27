@@ -24,6 +24,17 @@ export const icon = (name, cls = "") => {
     lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/>',
     plus: '<path d="M12 4v16M4 12h16"/>',
     logout: '<path d="M9 3H3v18h6m5-15 6 6-6 6m-7-6h13"/>',
+    close: '<path d="m6 6 12 12M6 18 18 6"/>',
+    review: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6m0 3v1"/>',
+    refresh: '<path d="M20 7v5h-5M4 17v-5h5M5 8a8 8 0 0 1 13-3l2 2M4 17l2 2a8 8 0 0 0 13-3"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    maximize: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
+    minimize: '<path d="M3 8h5V3m8 0v5h5M8 21v-5H3m13 5v-5h5"/>',
+    storage: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>',
+    compute: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3m14-6h3m-3 6h3"/>',
+    settings: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
+    moon: '<path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',
   };
   return `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.book}</svg>`;
 };
@@ -44,9 +55,12 @@ export async function api(route, { method = "GET", body } = {}) {
     );
   }
   if (!response.ok) {
-    if (response.status === 401 && route !== "/login")
-      window.dispatchEvent(new Event("session-ended"));
-    throw new Error(result.error || "Your request could not be completed.");
+    if ((response.status === 401 || result.code === "TRAINING_INVITE_REQUIRED") && route !== "/login")
+      window.dispatchEvent(new CustomEvent("session-ended", { detail: { message: result.error, eodUrl: result.eod_web_url } }));
+    const error = new Error(result.error || "Your request could not be completed.");
+    error.status = response.status;
+    error.eodUrl = result.eod_web_url;
+    throw error;
   }
   return result;
 }
@@ -54,6 +68,7 @@ let toastTimer;
 export function toast(text, error = false) {
   const el = document.getElementById("toast");
   el.textContent = text;
+  el.setAttribute("role", error ? "alert" : "status");
   el.className = `visible ${error ? "error" : ""}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(
@@ -63,10 +78,11 @@ export function toast(text, error = false) {
     error ? 9000 : 4500,
   );
 }
-export async function action(button, fn) {
+export async function action(button, fn, { busyText = "Saving…" } = {}) {
   const old = button.innerHTML;
   button.disabled = true;
-  button.textContent = "Saving…";
+  button.textContent = busyText;
+  button.setAttribute("aria-busy", "true");
   try {
     return await fn();
   } catch (err) {
@@ -74,6 +90,7 @@ export async function action(button, fn) {
   } finally {
     if (button.isConnected) {
       button.disabled = false;
+      button.removeAttribute("aria-busy");
       button.innerHTML = old;
     }
   }
@@ -98,8 +115,11 @@ export const formatDate = (date) =>
 export function dialog(title, html, submitText, onSubmit) {
   const el = document.createElement("dialog");
   el.className = "dialog";
+  const titleId = `dialog-${crypto.randomUUID()}`;
+  el.setAttribute("aria-labelledby", titleId);
   el.innerHTML = `<form><div class="dialog-head"><h2>${esc(title)}</h2><button type="button" data-close aria-label="Close dialog">×</button></div><div class="dialog-body">${html}<p class="form-error" role="alert" hidden></p></div><div class="dialog-foot"><button type="button" class="button subtle" data-close>Cancel</button><button type="submit" class="button primary">${esc(submitText)}</button></div></form>`;
   const opener = document.activeElement;
+  el.querySelector("h2").id = titleId;
   document.body.append(el);
   el.showModal();
   const close = () => {
@@ -125,6 +145,8 @@ export function dialog(title, html, submitText, onSubmit) {
       const error = el.querySelector(".form-error");
       error.textContent = err.message;
       error.hidden = false;
+      error.tabIndex = -1;
+      error.focus();
     } finally {
       button.disabled = false;
     }
