@@ -59,13 +59,16 @@ function shell(hash) {
     <div class="nav-caption">${admin ? "MANAGE LEARNING" : "YOUR WORKSPACE"}</div><nav aria-label="Primary navigation">${nav.map(([href, text, ico]) => `<a href="${href}" class="nav-item ${hash === href ? "active" : ""}" ${hash === href ? 'aria-current="page"' : ""}>${icon(ico)}<span>${text}</span>${hash === href ? '<span class="nav-dot"></span>' : ""}</a>`).join("")}</nav>
     <div class="sidebar-note">${icon("path")}<strong>Potential, in progress.</strong><p>Small steps. Stronger capabilities.</p><a href="${esc(eodUrl)}" target="_blank" rel="noopener">Assessment platform ${icon("external")}</a></div>
     <div class="sidebar-profile"><span class="avatar">${esc(initials(user.name))}</span><div><strong>${esc(user.name)}</strong><small>${admin ? "Learning administrator" : "Candidate workspace"}</small></div><button id="logout" title="Sign out" aria-label="Sign out">${icon("logout")}</button></div></aside>
-    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button><span>WORKSPACE</span><b>/</b><strong>${admin ? "Learning management" : "Personal development"}</strong></div><div class="topbar-tools"><span class="connected"><i></i>EOD connected</span><button id="theme" class="round-button" aria-label="Switch light and dark theme">◐</button><span class="avatar small-avatar">${esc(initials(user.name))}</span></div></header><main id="main-content" tabindex="-1"><div class="page-loading">Loading your workspace…</div></main><footer class="footer"><span>AnthroPrime Learning</span><span>Learn with purpose. Grow with evidence.</span></footer></div></div>`;
-  document.getElementById("logout").onclick = (event) =>
+    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button><span>WORKSPACE</span><b>/</b><strong>${admin ? "Learning management" : "Personal development"}</strong></div><div class="topbar-tools"><span class="connected"><i></i>EOD connected</span><button id="theme" class="round-button" aria-label="Switch light and dark theme">◐</button><span class="avatar small-avatar">${esc(initials(user.name))}</span><button id="header-logout" class="logout-button" type="button">${icon("logout")}<span>Log out</span></button></div></header><main id="main-content" tabindex="-1"><div class="page-loading">Loading your workspace…</div></main><footer class="footer"><span>AnthroPrime Learning</span><span>Learn with purpose. Grow with evidence.</span></footer></div></div>`;
+  const signOut = (event) =>
     action(event.currentTarget, async () => {
+      event.currentTarget.textContent = "Signing out…";
       await api("/logout", { method: "POST" });
       user = null;
       go("#/");
     });
+  document.getElementById("logout").onclick = signOut;
+  document.getElementById("header-logout").onclick = signOut;
   document.getElementById("theme").onclick = () => {
     const next =
       document.documentElement.dataset.theme === "dark" ? "light" : "dark";
