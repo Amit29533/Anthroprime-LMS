@@ -1,0 +1,117 @@
+import { DatabaseSync } from "node:sqlite";
+import fs from "node:fs";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
+
+const KINDS = new Set([
+  "courses",
+  "paths",
+  "enrollments",
+  "path_enrollments",
+  "audit",
+  "requests",
+  "metadata",
+]);
+export function createStore(file = ":memory:", instance = "test") {
+  if (file !== ":memory:")
+    fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
+  const db = new DatabaseSync(file, { timeout: 5000 });
+  db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
+    CREATE TABLE IF NOT EXISTS records(kind TEXT NOT NULL, id TEXT NOT NULL, data TEXT NOT NULL CHECK(json_valid(data)), PRIMARY KEY(kind,id));
+    CREATE INDEX IF NOT EXISTS learner_lookup ON records(kind,json_extract(data,'$.learner_id'));
+    CREATE UNIQUE INDEX IF NOT EXISTS unique_course_enrollment ON records(json_extract(data,'$.learner_id'),json_extract(data,'$.course_id')) WHERE kind='enrollments';
+    CREATE UNIQUE INDEX IF NOT EXISTS unique_path_enrollment ON records(json_extract(data,'$.learner_id'),json_extract(data,'$.path_id')) WHERE kind='path_enrollments';`);
+  const check = (kind) => {
+    if (!KINDS.has(kind)) throw new Error("Unknown record kind");
+  };
+  const store = {
+    get(kind, id) {
+      check(kind);
+      const row = db
+        .prepare("SELECT data FROM records WHERE kind=? AND id=?")
+        .get(kind, id);
+      return row ? JSON.parse(row.data) : null;
+    },
+    list(kind, filter = {}) {
+      check(kind);
+      return db
+        .prepare("SELECT data FROM records WHERE kind=? ORDER BY rowid DESC")
+        .all(kind)
+        .map((row) => JSON.parse(row.data))
+        .filter((row) =>
+          Object.entries(filter).every(([key, value]) => row[key] === value),
+        );
+    },
+    insert(kind, data) {
+      check(kind);
+      const row = {
+        ...data,
+        id: data.id || randomUUID(),
+        created_at: new Date().toISOString(),
+      };
+      db.prepare("INSERT INTO records(kind,id,data) VALUES(?,?,?)").run(
+        kind,
+        row.id,
+        JSON.stringify(row),
+      );
+      return row;
+    },
+    update(kind, id, patch) {
+      const current = store.get(kind, id);
+      if (!current) return null;
+      const row = {
+        ...current,
+        ...patch,
+        id,
+        updated_at: new Date().toISOString(),
+      };
+      db.prepare("UPDATE records SET data=? WHERE kind=? AND id=?").run(
+        JSON.stringify(row),
+        kind,
+        id,
+      );
+      return row;
+    },
+    transaction(fn) {
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        const result = fn();
+        if (result?.then)
+          throw new Error(
+            "Database transactions must not contain asynchronous work.",
+          );
+        db.exec("COMMIT");
+        return result;
+      } catch (err) {
+        db.exec("ROLLBACK");
+        throw err;
+      }
+    },
+    audit(actor, action, entity, details = {}) {
+      return store.insert("audit", {
+        actor: actor.id,
+        actor_name: actor.name,
+        action,
+        entity,
+        details,
+      });
+    },
+    close() {
+      db.close();
+    },
+  };
+  const previous = store.get("metadata", "eod-instance");
+  if (previous && previous.instance !== instance) {
+    db.close();
+    throw new Error(
+      "This database belongs to a different EOD instance. Use a separate database or an explicit migration.",
+    );
+  }
+  if (!previous)
+    store.insert("metadata", {
+      id: "eod-instance",
+      instance,
+      schema_version: 1,
+    });
+  return store;
+}
