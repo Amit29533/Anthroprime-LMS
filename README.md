@@ -18,6 +18,8 @@ Learners use their existing **EOD username/email and password**. EOD owns accoun
 
 See [architecture and scope](docs/ARCHITECTURE.md). Managed uploads, automatic cross-origin SSO, notifications, certificates and trainer permissions are planned.
 
+The interface follows [AnthroPrime's visual identity](https://anthroprime.com): the AP mark, locally hosted Cormorant Garamond / DM Sans fonts, ivory and charcoal surfaces, navy-blue panels and warm gold accents. Both light and dark themes are supported. Font licenses and asset provenance are included in `public/assets/`.
+
 ## Run locally
 
 Use **Node 24.15 or later in the Node 24 series**. There are no npm runtime dependencies; storage uses Node's built-in SQLite API.
