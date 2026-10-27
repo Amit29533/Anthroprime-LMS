@@ -197,6 +197,7 @@ export function learningProgress(enrollment) {
   const completed = lessons.filter(
     (lesson) => enrollment.progress?.[lesson.id]?.completed_at,
   ).length;
+  const next = lessons.find((lesson) => !enrollment.progress?.[lesson.id]?.completed_at);
   return {
     completed,
     total: lessons.length,
@@ -204,9 +205,8 @@ export function learningProgress(enrollment) {
       ? Math.round((completed / lessons.length) * 100)
       : 0,
     complete: lessons.length > 0 && completed === lessons.length,
-    next_lesson_id:
-      lessons.find((lesson) => !enrollment.progress?.[lesson.id]?.completed_at)
-        ?.id || null,
+    next_lesson_id: next?.id || null,
+    next_lesson_title: next?.title || "",
   };
 }
 

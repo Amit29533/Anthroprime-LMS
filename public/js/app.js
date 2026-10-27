@@ -13,7 +13,8 @@ import {
 import { courseEditor } from "./editor.js";
 import { trainingDashboard } from "./training.js";
 import { player, closeLearningWindow } from "./player.js";
-import { courseOverview } from "./course-overview.js";
+import { courseOverview, hours } from "./course-overview.js";
+import { cover, courseCode } from "./covers.js";
 import { setupNavigation, closeNavigation, enterView, confirmNavigation, clearEditorGuard } from "./experience.js";
 
 let user = null;
@@ -21,6 +22,7 @@ let eodUrl = "";
 let renderId = 0;
 let filter = "";
 let libraryType = "all";
+let learningFilter = "all";
 const root = document.getElementById("app");
 const go = (route) => {
   if (location.hash === route) render();
@@ -33,7 +35,7 @@ const initials = (name) =>
     .slice(0, 2)
     .map((p) => p[0])
     .join("");
-const brand = `<img class="brand-logo" src="/assets/anthroprime-logo.jpg" alt="" width="64" height="50"><span class="brand-name">Anthro<em>Prime</em><small>Learning</small></span>`;
+const brand = `<img class="brand-logo" src="/assets/anthroprime-logo.jpg" alt="" width="64" height="50"><span class="brand-name">Anthro<em>Prime</em><small>ECOD · Learning</small></span>`;
 const isAdmin = () => user?.role === "admin";
 const empty = (title, text) =>
   `<div class="empty"><span class="empty-icon">${icon("book")}</span><h3>${esc(title)}</h3><p>${esc(text)}</p></div>`;
@@ -42,6 +44,22 @@ const kindLabel = (kind) =>
     kind
   ];
 
+function themeButton() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  return `<button id="theme" class="round-button" aria-label="Switch to ${dark ? "light" : "dark"} theme">${icon(dark ? "sun" : "moon")}</button>`;
+}
+function learnerShell(hash) {
+  const nav = [
+    ["#/home", "Home", "home"],
+    ["#/learning", "My learning", "path"],
+    ["#/catalog", "Library", "book"],
+    ["#/results", "Assessments", "chart"],
+  ];
+  return `<div class="workspace learner"><header class="lx-top"><div class="lx-top-inner"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">${icon("menu")}</button><a class="brand" href="#/home" aria-label="ECOD Learning home">${brand}</a>
+    <aside class="lx-nav" id="sidebar" aria-label="Navigation"><div class="lx-nav-head"><span class="brand">${brand}</span><button class="sidebar-close" id="sidebar-close" aria-label="Close navigation">${icon("close")}</button></div><nav aria-label="Primary navigation">${nav.map(([href, text, ico]) => `<a href="${href}" class="nav-item ${hash === href ? "active" : ""}" ${hash === href ? 'aria-current="page"' : ""}>${icon(ico)}<span>${text}</span></a>`).join("")}</nav><a class="lx-nav-ext" href="${esc(eodUrl)}" target="_blank" rel="noopener">${icon("external")}<span>ECOD assessment platform</span></a></aside>
+    <div class="lx-tools">${themeButton()}<span class="lx-profile" title="${esc(user.name)}"><span class="avatar">${esc(initials(user.name))}</span><span class="lx-profile-name">${esc(firstName(user.name))}</span></span><button id="header-logout" class="logout-button" type="button">${icon("logout")}<span>Log out</span></button></div></div></header><button class="nav-scrim" id="nav-scrim" aria-label="Close navigation" hidden></button>
+    <div class="workspace-main"><main id="main-content" tabindex="-1" aria-busy="true"><div class="page-loading" role="status">Loading…</div></main></div></div>`;
+}
 function shell(hash) {
   const admin = isAdmin();
   const nav = admin
@@ -60,11 +78,12 @@ function shell(hash) {
         ["#/learning", "My learning", "path"],
         ["#/results", "My assessments", "chart"],
       ];
-  root.innerHTML = `<div class="workspace"><aside class="sidebar" id="sidebar"><button class="sidebar-close" id="sidebar-close" aria-label="Close navigation">${icon("close")}</button><a class="brand" href="#/home">${brand}</a>
+  if (!admin) root.innerHTML = learnerShell(hash);
+  else root.innerHTML = `<div class="workspace"><aside class="sidebar" id="sidebar"><button class="sidebar-close" id="sidebar-close" aria-label="Close navigation">${icon("close")}</button><a class="brand" href="#/home">${brand}</a>
     <nav aria-label="Primary navigation">${nav.map(([href, text, ico]) => `<a href="${href}" class="nav-item ${hash === href ? "active" : ""}" ${hash === href ? 'aria-current="page"' : ""}>${icon(ico)}<span>${text}</span>${hash === href ? '<span class="nav-dot"></span>' : ""}</a>`).join("")}</nav>
     <a class="sidebar-link" href="${esc(eodUrl)}" target="_blank" rel="noopener">Assessment platform ${icon("external")}</a>
     <div class="sidebar-profile"><span class="avatar">${esc(initials(user.name))}</span><div><strong>${esc(user.name)}</strong><small>${admin ? "Administrator" : "Candidate"}</small></div></div></aside><button class="nav-scrim" id="nav-scrim" aria-label="Close navigation" hidden></button>
-    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button></div><div class="topbar-tools"><button id="theme" class="round-button" aria-label="Switch to ${document.documentElement.dataset.theme === "dark" ? "light" : "dark"} theme">${icon(document.documentElement.dataset.theme === "dark" ? "sun" : "moon")}</button><button id="header-logout" class="logout-button" type="button">${icon("logout")}<span>Log out</span></button></div></header><main id="main-content" tabindex="-1" aria-busy="true"><div class="page-loading" role="status">Loading…</div></main></div></div>`;
+    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button></div><div class="topbar-tools">${themeButton()}<button id="header-logout" class="logout-button" type="button">${icon("logout")}<span>Log out</span></button></div></header><main id="main-content" tabindex="-1" aria-busy="true"><div class="page-loading" role="status">Loading…</div></main></div></div>`;
   const signOut = async (event) => {
     const button = event.currentTarget;
     if (!(await confirmNavigation("#/"))) return;
@@ -97,17 +116,31 @@ function login(message = "") {
   closeNavigation();
   closeLearningWindow();
   clearEditorGuard();
-  root.innerHTML = `<main class="signin"><section class="signin-form"><div class="signin-form-inner"><span class="brand">${brand}</span><h1>Sign in</h1><p>Use your ECOD account. Training is by invitation.</p><form id="login-form">${field("Username or email", "username", "", { required: true, max: 200 })}${field("Password", "password", "", { type: "password", required: true })}${field("Authenticator code (if enabled)", "otp")}<p class="form-error" role="alert" ${message ? "" : "hidden"}>${esc(message)}</p><button class="button primary signin-submit" type="submit">Sign in</button></form><a href="${esc(eodUrl)}" class="text-link" target="_blank" rel="noopener">Open assessment platform ${icon("external")}</a></div></section></main>`;
+  document.title = "Sign in · ECOD Learning";
+  root.innerHTML = `<main class="signin" id="main-content"><section class="signin-aside" aria-hidden="true"><span class="brand on-dark">${brand}</span><div class="signin-pitch"><span class="signin-kicker">ECOD Learning</span><h2>Build the skills your next assessment looks for.</h2><p>Focused courses, short knowledge checks and progress that saves itself, all with your ECOD account.</p><ul class="signin-points"><li>${icon("book")}<div><strong>Structured courses</strong><span>Clear modules, one lesson at a time.</span></div></li><li>${icon("help")}<div><strong>Knowledge checks</strong><span>Three quick questions after each lesson, with explanations.</span></div></li><li>${icon("chart")}<div><strong>Progress you can see</strong><span>Pick up exactly where you left off.</span></div></li></ul></div><p class="signin-foot">Part of ECOD · Enterprise Capability on Demand by AnthroPrime</p></section>
+    <section class="signin-form"><div class="signin-form-inner"><span class="brand signin-mobile-brand">${brand}</span><h1>Welcome back</h1><p class="signin-lead">Sign in with your ECOD username or email.</p><form id="login-form" novalidate><label class="field"><span>Username or email</span><input name="username" required maxlength="200" autocomplete="username" autocapitalize="none" spellcheck="false"></label><label class="field"><span>Password</span><span class="password-wrap"><input name="password" type="password" required maxlength="200" autocomplete="current-password"><button type="button" class="password-toggle" id="password-toggle" aria-label="Show password" aria-pressed="false">${icon("eye")}</button></span></label><details class="otp-toggle"><summary>I use an authenticator app</summary><label class="field"><span>Authenticator code</span><input name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="100" placeholder="6-digit code"></label></details><p class="form-error" role="alert" ${message ? "" : "hidden"}>${esc(message)}</p><button class="button primary signin-submit" type="submit">Sign in ${icon("arrow")}</button></form><div class="signin-help"><p>${icon("shield")}<span>Training is by invitation. If you can’t sign in, ask your ECOD administrator for access.</span></p><a href="${esc(eodUrl)}" class="text-link" target="_blank" rel="noopener">Go to the ECOD assessment platform ${icon("external")}</a></div></div></section></main>`;
   const form = document.getElementById("login-form");
-  form.elements.username.autocomplete = "username";
-  form.elements.password.autocomplete = "current-password";
+  const toggle = document.getElementById("password-toggle");
+  toggle.onclick = () => {
+    const show = form.elements.password.type === "password";
+    form.elements.password.type = show ? "text" : "password";
+    toggle.innerHTML = icon(show ? "eyeOff" : "eye");
+    toggle.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    toggle.setAttribute("aria-pressed", String(show));
+  };
   form.onsubmit = async (event) => {
     event.preventDefault();
     const b = form.querySelector("[type=submit]");
+    const error = form.querySelector(".form-error");
+    if (!form.elements.username.value.trim() || !form.elements.password.value) {
+      error.textContent = "Enter your username or email and your password.";
+      error.hidden = false;
+      (form.elements.username.value.trim() ? form.elements.password : form.elements.username).focus();
+      return;
+    }
     b.disabled = true;
     b.textContent = "Signing in…";
     b.setAttribute("aria-busy", "true");
-    const error = form.querySelector(".form-error");
     error.hidden = true;
     try {
       const data = await api("/login", {
@@ -124,12 +157,23 @@ function login(message = "") {
     } finally {
       b.disabled = false;
       b.removeAttribute("aria-busy");
-      b.textContent = "Sign in";
+      b.innerHTML = `Sign in ${icon("arrow")}`;
     }
   };
 }
+const greeting = () => {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+};
+const lessonLink = (enrollment) =>
+  enrollment.progress.next_lesson_id && !enrollment.progress.complete
+    ? `#/course/${enrollment.id}?lesson=${encodeURIComponent(enrollment.progress.next_lesson_id)}`
+    : `#/course/${enrollment.id}`;
 function courseCard(course, index, enrollment, recommendation = false) {
-  return `<article class="course-card"><div class="course-card-body"><div class="course-tags">${tag(course.level || "Foundation")}${recommendation && course.gap_names?.length ? tag("Recommended", "green") : ""}</div><h3>${esc(course.title)}</h3><p>${esc(course.summary)}</p>${course.gap_names?.length ? `<div class="gap-match">${icon("star")} Covers ${esc(course.gap_names.slice(0, 2).join(" & "))}</div>` : ""}<div class="course-meta"><span>${icon("clock")}${course.duration_minutes} min</span><span>${course.lesson_count} lessons</span></div>${enrollment ? `<div class="progress-label"><span>${enrollment.progress.complete ? "Completed" : `${enrollment.progress.completed}/${enrollment.progress.total} lessons`}</span><b>${enrollment.progress.percent}%</b></div>${progress(enrollment.progress.percent)}` : ""}<button class="button ${enrollment ? "primary" : "outline"} full" ${enrollment ? `data-open="${enrollment.id}"` : `data-enroll="${course.id}"`}>${enrollment ? (enrollment.progress.complete ? "Review" : enrollment.progress.completed ? "Continue" : "Start") : "Enroll"}</button></div></article>`;
+  const state = enrollment
+    ? enrollment.progress.complete ? ["Completed", "green"] : enrollment.progress.completed ? ["In progress", "blue"] : ["Not started", ""]
+    : recommendation && course.gap_names?.length ? ["Recommended", "gold"] : null;
+  return `<article class="course-card">${cover(course.id, courseCode(course.title))}<div class="course-card-body"><div class="course-tags">${state ? tag(state[0], state[1]) : ""}${course.level ? tag(course.level[0].toUpperCase() + course.level.slice(1)) : ""}</div><h3>${esc(course.title)}</h3><p>${esc(course.summary)}</p>${course.gap_names?.length ? `<div class="gap-match">${icon("target")} Builds ${esc(course.gap_names.slice(0, 2).join(" & "))}</div>` : ""}<div class="course-meta"><span>${icon("doc")}${course.lesson_count} lessons</span><span>${icon("clock")}${hours(course.duration_minutes)}</span></div>${enrollment ? `<div class="card-progress">${progress(enrollment.progress.percent)}<span>${enrollment.progress.percent}%</span></div>` : ""}<button class="button ${enrollment ? "primary" : "outline"} full" ${enrollment ? `data-open="${enrollment.id}"` : `data-enroll="${course.id}"`}>${enrollment ? (enrollment.progress.complete ? "Review course" : enrollment.progress.completed ? "Continue" : "Start course") : "Enroll"}</button></div></article>`;
 }
 function pathCard(path, index, enrolled) {
   const courses = enrolled
@@ -138,7 +182,7 @@ function pathCard(path, index, enrolled) {
   const next =
     enrolled?.enrollments.find((e) => !e.progress.complete) ||
     enrolled?.enrollments[0];
-  return `<article class="path-card"><div class="path-rail">${icon("path")}<span>Learning path</span></div><div class="path-body"><h3>${esc(path.title)}</h3><p>${esc(path.summary)}</p><ol>${(courses || []).map((c) => `<li>${esc(c.title)}</li>`).join("")}</ol>${enrolled ? `<div class="progress-label"><span>${enrolled.completed_courses} of ${enrolled.enrollments.length} courses complete</span><b>${enrolled.percent}%</b></div>${progress(enrolled.percent, "Learning path progress")}` : ""}<button class="button ${enrolled ? "primary" : "outline"}" ${next ? `data-open="${next.id}"` : `data-path="${path.id}"`}>${enrolled ? "Continue path" : "Start path"}</button></div></article>`;
+  return `<article class="path-card"><div class="path-rail">${icon("path")}<span>Learning path · ${(courses || []).length} courses</span></div><div class="path-body"><h3>${esc(path.title)}</h3><p>${esc(path.summary)}</p><ol>${(courses || []).map((c) => `<li>${esc(c.title)}</li>`).join("")}</ol>${enrolled ? `<div class="progress-label"><span>${enrolled.completed_courses} of ${enrolled.enrollments.length} courses complete</span><b>${enrolled.percent}%</b></div>${progress(enrolled.percent, "Learning path progress")}` : ""}<button class="button ${enrolled ? "primary" : "outline"}" ${next ? `data-open="${next.id}"` : `data-path="${path.id}"`}>${enrolled ? "Continue path" : "Start path"}</button></div></article>`;
 }
 function wireLearning(view) {
   view.querySelectorAll("[data-open]").forEach((b) => {
@@ -167,6 +211,7 @@ function wireLearning(view) {
       });
   });
 }
+const grid = (cards, emptyTitle, emptyText) => `<div class="course-grid">${cards || empty(emptyTitle, emptyText)}</div>`;
 function learnerView(view, data, hash) {
   const { enrollments: enrolled, courses, paths } = data;
   const courseMap = new Map(enrolled.map((e) => [e.course_id, e]));
@@ -174,22 +219,29 @@ function learnerView(view, data, hash) {
   const completed = enrolled.filter((e) => e.progress.complete);
   const continueCourse =
     active.find((e) => e.progress.completed > 0) || active[0];
-  const title =
-    hash === "#/catalog"
-      ? "Course library"
-      : hash === "#/learning"
-        ? "My learning"
-        : `Welcome, ${firstName(data.name)}`;
-  view.innerHTML = `<div class="page-head"><h1>${esc(title)}</h1></div>`;
   if (hash === "#/results") {
-    view.innerHTML = `<div class="page-head"><h1>My assessments</h1><a class="button outline" href="${esc(eodUrl)}" target="_blank" rel="noopener">Open EOD ${icon("external")}</a></div><div class="results-grid">${data.reports.map((report) => `<article class="report-card"><span class="label">Latest result</span><h2>${esc(report.role_name)}</h2><div class="report-score">${report.overall_pct}<small>%</small></div><h3>Focus areas</h3>${report.gaps.length ? report.gaps.map((gap) => `<div class="gap-row"><span>${esc(gap.name)}</span>${tag(`${gap.gap} level gap`, gap.severity === "critical_gap" ? "amber" : "")}</div>`).join("") : "<p>All competencies meet their targets.</p>"}<a class="button primary" href="#/catalog">Find courses</a></article>`).join("") || empty("No assessment yet", "Complete an EOD assessment to see results and recommendations.")}</div>`;
+    view.innerHTML = `<div class="page-head learner-head"><div><h1>My assessments</h1><p>Your latest ECOD results and the areas to focus on next.</p></div><a class="button outline" href="${esc(eodUrl)}" target="_blank" rel="noopener">Open ECOD ${icon("external")}</a></div><div class="results-grid">${data.reports.map((report) => `<article class="report-card"><span class="label">Latest result</span><h2>${esc(report.role_name)}</h2><div class="report-score">${report.overall_pct}<small>%</small></div><h3>Focus areas</h3>${report.gaps.length ? report.gaps.map((gap) => `<div class="gap-row"><span>${esc(gap.name)}</span>${tag(`${gap.gap} level gap`, gap.severity === "critical_gap" ? "amber" : "")}</div>`).join("") : "<p>All competencies meet their targets.</p>"}<a class="button primary" href="#/catalog">Find courses</a></article>`).join("") || empty("No assessment results yet", "Once you complete an ECOD assessment, your results and recommended courses appear here.")}</div>`;
     return;
   }
   if (hash === "#/home") {
-    view.innerHTML += `${continueCourse ? `<section class="continue-strip"><div><span class="label">Continue where you left off</span><strong>${esc(continueCourse.course.title)}</strong><div class="hero-progress">${progress(continueCourse.progress.percent)}<span>${continueCourse.progress.percent}%</span></div></div><button class="button primary" data-open="${continueCourse.id}">Continue</button></section>` : ""}    <div class="stats"><div><span class="stat-icon">${icon("book")}</span><strong>${active.length}</strong><span>In progress</span></div><div><span class="stat-icon green-text">${icon("check")}</span><strong>${completed.length}</strong><span>Completed</span></div><div><span class="stat-icon gold-text">${icon("path")}</span><strong>${enrolled.reduce((sum, e) => sum + e.progress.completed, 0)}</strong><span>Lessons completed</span></div></div>`;
+    const lessonsDone = enrolled.reduce((sum, e) => sum + e.progress.completed, 0);
+    view.innerHTML = `<section class="home-hero"><p class="home-date">${esc(new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long" }).format(new Date()))}</p><h1>${greeting()}, ${esc(firstName(data.name))}</h1><p>${active.length ? `You have ${active.length} course${active.length === 1 ? "" : "s"} in progress. Small steps every day add up.` : completed.length ? "You’re all caught up. Explore the library for your next course." : "Your assigned courses will appear here."}</p></section>
+      ${continueCourse ? `<section class="continue-card">${cover(continueCourse.course.id, courseCode(continueCourse.course.title))}<div class="continue-body"><span class="label">${continueCourse.progress.completed ? "Continue learning" : "Ready to start"}</span><h2>${esc(continueCourse.course.title)}</h2>${continueCourse.progress.next_lesson_title ? `<p class="continue-next">${icon("doc")}<span>Next: <strong>${esc(continueCourse.progress.next_lesson_title)}</strong></span></p>` : ""}<div class="card-progress">${progress(continueCourse.progress.percent)}<span>${continueCourse.progress.percent}%</span></div><p class="continue-count">${continueCourse.progress.completed} of ${continueCourse.progress.total} lessons complete</p><div class="continue-actions"><a class="button primary large" href="${lessonLink(continueCourse)}">${continueCourse.progress.completed ? "Continue" : "Start learning"} ${icon("arrow")}</a><button class="button outline" data-open="${continueCourse.id}">Course overview</button></div></div></section>` : ""}
+      <div class="stats"><div><span class="stat-icon">${icon("book")}</span><strong>${active.length}</strong><span>In progress</span></div><div><span class="stat-icon green-text">${icon("checkCircle")}</span><strong>${completed.length}</strong><span>Completed</span></div><div><span class="stat-icon gold-text">${icon("doc")}</span><strong>${lessonsDone}</strong><span>Lessons completed</span></div></div>`;
+    if (enrolled.length > (continueCourse ? 1 : 0))
+      view.innerHTML += `<div class="section-head"><h2>My courses</h2><a href="#/learning" class="text-link">View all</a></div>${grid(enrolled.slice(0, 3).map((e, i) => courseCard(e.course, i, e)).join(""))}`;
+    const recommended = courses.filter((c) => !courseMap.has(c.id)).slice(0, 3);
+    if (recommended.length)
+      view.innerHTML += `<div class="section-head"><h2>Recommended for you</h2><a href="#/catalog" class="text-link">Browse library</a></div>${grid(recommended.map((c, i) => courseCard(c, i, null, true)).join(""))}`;
+    if (!enrolled.length && !recommended.length)
+      view.innerHTML += empty("No courses yet", "Your administrator will assign courses to you. They’ll appear here as soon as they do.");
+    if (paths.length)
+      view.innerHTML += `<div class="section-head"><h2>Learning paths</h2><a href="#/catalog" class="text-link">View all</a></div><div class="path-grid">${paths.slice(0, 2).map((p, i) => pathCard(p, i, data.path_enrollments.find((e) => e.path.id === p.id))).join("")}</div>`;
+    wireLearning(view);
+    return;
   }
   if (hash === "#/catalog") {
-    view.innerHTML += `<div class="library-toolbar"><label class="search"><span class="sr-only">Search courses and paths</span><input id="course-search" type="search" placeholder="Search courses" value="${esc(filter)}"></label><div class="tabs" aria-label="Content type">${[
+    view.innerHTML = `<div class="page-head learner-head"><div><h1>Library</h1><p>Every course and learning path available to you.</p></div></div><div class="library-toolbar"><label class="search">${icon("search")}<span class="sr-only">Search courses and paths</span><input id="course-search" type="search" placeholder="Search by title or skill" value="${esc(filter)}"></label><div class="tabs" aria-label="Content type">${[
       ["all", "All"],
       ["courses", "Courses"],
       ["paths", "Paths"],
@@ -210,7 +262,7 @@ function learnerView(view, data, hash) {
         `${p.title} ${p.summary}`.toLowerCase().includes(q),
       );
       const target = view.querySelector("#library-results");
-      target.innerHTML = `${libraryType !== "paths" && selected.length ? `<div class="section-head"><h2>Courses</h2><span>${selected.length} courses</span></div><div class="course-grid">${selected.map((c, i) => courseCard(c, i, courseMap.get(c.id), true)).join("")}</div>` : ""}${
+      target.innerHTML = `${libraryType !== "paths" && selected.length ? `<div class="section-head"><h2>Courses</h2><span>${selected.length} course${selected.length === 1 ? "" : "s"}</span></div><div class="course-grid">${selected.map((c, i) => courseCard(c, i, courseMap.get(c.id), true)).join("")}</div>` : ""}${
         libraryType !== "courses" && selectedPaths.length
           ? `<div class="section-head"><h2>Learning paths</h2></div><div class="path-grid">${selectedPaths
               .map((p, i) =>
@@ -227,7 +279,7 @@ function learnerView(view, data, hash) {
         target.innerHTML = empty(
           q ? "No matches" : "No courses yet",
           q
-            ? "Try a different search."
+            ? "Try a different word, or clear the search."
             : "Your administrator will assign courses here.",
         );
       wireLearning(target);
@@ -249,43 +301,29 @@ function learnerView(view, data, hash) {
     paint();
     return;
   }
-  if (hash === "#/learning") {
-    view.innerHTML += `${data.path_enrollments.length ? `<div class="section-head"><h2>Paths</h2></div><div class="path-grid">${data.path_enrollments.map((p, i) => pathCard(p.path, i, p)).join("")}</div>` : ""}<div class="section-head"><h2>Courses</h2><span>${enrolled.length} enrolled</span></div><div class="course-grid">${enrolled.map((e, i) => courseCard(e.course, i, e)).join("") || empty("No courses yet", "Courses assigned to you will appear here.")}</div>`;
-  } else {
-    const recommended = courses
-      .filter((c) => !courseMap.get(c.id)?.progress.complete)
-      .slice(0, 3);
-    view.innerHTML += `<div class="section-head"><h2>Recommended</h2><a href="#/catalog" class="text-link">View all</a></div><div class="course-grid">${
-      recommended
-        .map((c, i) => courseCard(c, i, courseMap.get(c.id), true))
-        .join("") ||
-      (enrolled.length
-        ? enrolled
-            .slice(0, 3)
-            .map((e, i) => courseCard(e.course, i, e))
-            .join("")
-        : empty(
-            "No courses yet",
-            "Complete an EOD assessment, or ask your administrator to assign a course.",
-          ))
-    }</div>${
-      paths.length
-        ? `<div class="section-head"><h2>Learning paths</h2><a href="#/catalog" class="text-link">View all</a></div><div class="path-grid">${paths
-            .slice(0, 2)
-            .map((p, i) =>
-              pathCard(
-                p,
-                i,
-                data.path_enrollments.find((e) => e.path.id === p.id),
-              ),
-            )
-            .join("")}</div>`
-        : ""
-    }`;
-  }
+  // #/learning: everything assigned to this candidate, filterable by status.
+  const groups = {
+    all: enrolled,
+    progress: enrolled.filter((e) => !e.progress.complete && e.progress.completed),
+    new: enrolled.filter((e) => !e.progress.completed),
+    done: completed,
+  };
+  view.innerHTML = `<div class="page-head learner-head"><div><h1>My learning</h1><p>Courses assigned to you, with your progress.</p></div></div><div class="tabs status-tabs" aria-label="Filter by status">${[["all", "All"], ["progress", "In progress"], ["new", "Not started"], ["done", "Completed"]].map(([key, text]) => `<button data-status="${key}" class="${learningFilter === key ? "active" : ""}" aria-pressed="${learningFilter === key}">${text}<span class="count">${groups[key].length}</span></button>`).join("")}</div><div id="learning-results"></div>${data.path_enrollments.length ? `<div class="section-head"><h2>Learning paths</h2></div><div class="path-grid">${data.path_enrollments.map((p, i) => pathCard(p.path, i, p)).join("")}</div>` : ""}`;
+  const paint = () => {
+    const target = view.querySelector("#learning-results");
+    target.innerHTML = grid(groups[learningFilter].map((e, i) => courseCard(e.course, i, e)).join(""), learningFilter === "all" ? "No courses yet" : "Nothing here", learningFilter === "all" ? "Courses assigned to you will appear here." : "No courses match this filter right now.");
+    wireLearning(target);
+  };
+  view.querySelectorAll("[data-status]").forEach((b) => {
+    b.onclick = () => {
+      learningFilter = b.dataset.status;
+      view.querySelectorAll("[data-status]").forEach((other) => { other.classList.toggle("active", other === b); other.setAttribute("aria-pressed", String(other === b)); });
+      paint();
+    };
+  });
+  paint();
   wireLearning(view);
 }
-
 
 function assignment(data, preset = null) {
   const candidates = data.candidates.filter((c) => c.training_access);
@@ -441,7 +479,7 @@ async function render() {
   try {
     if (hash.startsWith("#/course/") && !isAdmin()) {
       if (new URLSearchParams(location.hash.split("?")[1] || "").has("lesson")) await player(view, hash.split("/")[2], { eodUrl });
-      else await courseOverview(view, hash.split("/")[2]);
+      else await courseOverview(view, hash.split("/")[2], { eodUrl });
       enterView(view);
       return;
     }

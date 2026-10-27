@@ -82,5 +82,5 @@ export function enterView(view) {
   // One entrance on route changes; interaction updates do not replay the whole page.
   view.classList.add("view-enter");
   const heading = view.querySelector("h1");
-  document.title = heading ? `${heading.textContent.trim()} · AnthroPrime Learning` : "AnthroPrime · Learning";
+  document.title = heading ? `${heading.textContent.trim()} · ECOD Learning` : "ECOD Learning · AnthroPrime";
 }

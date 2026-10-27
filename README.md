@@ -82,7 +82,11 @@ Shared credentials work now. Automatic browser-session handoff needs the planned
 
 ## Learning experience
 
-Assigned courses open a module overview with saved progress and an ordered lesson list. Open a lesson to enter a dedicated learning window with a collapsible outline, bounded reading sections, a separate quiz introduction and one question at a time. The **Full screen** control uses browser full screen when supported, with an expanded-window fallback; **Esc** or **Exit full screen** returns. Original lesson notes remain available under **Full lesson notes & sources**. Presentation changes preserve existing course snapshots and candidate progress.
+Candidates get a top-navigation workspace (Home, My learning, Library, Assessments) with generated course covers, a **Continue learning** card that jumps straight to the next lesson, and status filters for assigned courses. The sign-in page uses existing ECOD credentials, with a show-password control and an optional authenticator code.
+
+A course page shows a banner, a progress card (lessons, incomplete, completed) and a **Lessons** tab that groups lessons by module with done, current and locked states. An **About** tab covers outcomes and how the course works.
+
+Opening a lesson enters a full-window player with a collapsible course outline. Each lesson is a single readable page: the full text, a highlighted learning goal, structured lists, sources as footnotes, an **On this page** list on wide screens and a reading-progress bar. Nothing is hidden behind a disclosure. Each knowledge check has an introduction (questions, pass mark, attempts), one question at a time, and a results screen with a score ring, a pass or not-yet badge and a red/green review with explanations. **Notes** keeps per-lesson notes in the browser (this device only). The **Full screen** control uses browser full screen when supported, with an expanded-window fallback; **Esc** or **Exit full screen** returns. Presentation changes preserve existing course snapshots and candidate progress.
 
 ## Deployment boundary
 

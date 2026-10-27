@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 import { world, courseInput, tokens } from "./helpers.mjs";
 import { player, lessonText, closeLearningWindow } from "../public/js/player.js";
 import { courseOverview } from "../public/js/course-overview.js";
-import { lessonPages, readingMarkup } from "../public/js/lesson-pages.js";
+import { lessonContent } from "../public/js/lesson-content.js";
 import { setupNavigation, closeNavigation, clearEditorGuard } from "../public/js/experience.js";
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -48,7 +48,7 @@ function beginQuiz(view) {
   view.querySelector("#start-quiz").click();
 }
 
-test("reader POV: section navigation never completes a lesson; full screen retains the workspace and quiz draft", async (t) => {
+test("reader POV: the whole lesson is on one page, reading never completes it, and full screen retains the workspace and quiz draft", async (t) => {
   const { window, view, document } = domWorld(t);
   const w = world(t); const input = withInlineCheck();
   input.curriculum[0].lessons[0].body = "## Your goal\n\nChoose an access policy.\n\n## Worked example\n\nLimit access to the data needed.";
@@ -67,11 +67,15 @@ test("reader POV: section navigation never completes a lesson; full screen retai
   document.exitFullscreen = async () => { native = null; document.dispatchEvent(new window.Event("fullscreenchange")); };
   view.querySelector("#toggle-learning-fullscreen").click(); await tick();
   assert.equal(native, workspace);
-  view.querySelector("#next-section").click();
-  assert.equal(view.querySelector("#lesson-title").textContent, "Worked example");
+  const body = view.querySelector(".lesson-body");
+  assert.match(body.querySelector(".lesson-goal").textContent, /Choose an access policy/);
+  assert.equal(body.querySelector("h2").textContent, "Worked example");
+  assert.match(body.textContent, /Limit access to the data needed/, "every section is visible without paging");
+  assert.equal(view.querySelector("details"), view.querySelector(".learn-module"), "no lesson text is hidden behind a disclosure");
+  view.querySelector('[data-lesson="reading"][data-part="read"]').click();
   assert.equal(view.querySelector("#learning-workspace"), workspace, "paint preserves the native full-screen element");
   assert.equal(native, workspace);
-  assert.equal(writes, 0, "reading pages are not completion evidence");
+  assert.equal(writes, 0, "reading is not completion evidence");
   beginQuiz(view);
   const radio = view.querySelector('input[name="question-0"][value="a"]');
   radio.checked = true; radio.dispatchEvent(new window.Event("change", { bubbles: true }));
@@ -118,23 +122,28 @@ test("course overview POV: snapshot counts, next lesson and sequential locks rem
   assert.match(view.querySelector(".overview-progress").textContent, /0% complete/);
   assert.match(view.querySelector(".module-card").textContent, /2 lessons/);
   assert.equal(view.querySelector(".course-overview-hero .button").getAttribute("href"), `#/course/${enrollment.id}?lesson=reading`);
-  view.querySelector('[data-overview-tab="lessons"]').click();
-  assert.equal(view.querySelectorAll(".overview-lesson-row a").length, 1, "only the first uncompleted lesson opens");
+  const links = [...view.querySelectorAll(".overview-lesson-row a")].map((a) => a.getAttribute("href"));
+  assert.deepEqual(links, [`#/course/${enrollment.id}?lesson=reading`, `#/course/${enrollment.id}?lesson=reading&part=check`], "only the first uncompleted lesson and its check open");
   assert.equal(view.querySelectorAll(".overview-lesson-row .sr-only").length, 1);
+  view.querySelector('[data-overview-tab="about"]').click();
+  assert.match(view.querySelector(".about-side").textContent, /Go in order/);
+  assert.equal(view.querySelector(".overview-lesson-row"), null);
   assert.equal(view.querySelector("#practice-form"), null);
 });
 
-test("reading presentation: long notes become bounded sections without losing text; diagrams and HTML stay safe", () => {
-  const body = `## Goal\n\n${Array.from({ length: 400 }, (_, i) => `word${i}`).join(" ")}\n\nSource: supplied notes`;
-  const presentation = lessonPages({ id: "long", title: "Reading", body, kind: "reading" });
-  assert.ok(presentation.pages.every((p) => p.lines.join(" ").split(/\s+/).length <= 170));
-  assert.equal(presentation.pages.flatMap((p) => p.lines).join(" "), body.split("\n\n")[1]);
-  assert.equal(presentation.original, body);
-  const compute = lessonPages({ id: "rsa-t01-l3", body: "Original notes", title: "Compute", kind: "reading" });
-  assert.equal(compute.pages[0].cards.length, 3);
-  assert.match(readingMarkup(compute.pages[0]), /Databricks-managed default storage/);
-  assert.equal(compute.original, "Original notes");
-  assert.doesNotMatch(readingMarkup({ title: "test", lead: "<script>x</script>", lines: ["<img onerror=x>"], cards: [{ title: "<svg>", text: "<iframe>" }] }), /<script>|<img|<svg>|<iframe>/);
+test("lesson content: every line is shown, labels and bullet groups are structured, sources are footnotes, HTML stays inert", () => {
+  const words = Array.from({ length: 400 }, (_, i) => `word${i}`).join(" ");
+  const long = lessonContent(`## Overview\n\n${words}\n\nSource: supplied notes`);
+  assert.match(long.html, /word0 /); assert.match(long.html, /word399/);
+  assert.deepEqual(long.toc.map((t) => t.title), ["Overview"]);
+  assert.deepEqual(long.sources, ["supplied notes"]);
+  const slide = lessonContent("## Your learning goal\n\nDesign a governed lakehouse\n\n## Why it matters\n\nCore ideas\nTeams build a point solution for every new request\nSame raw data is copied by every team\nWHY IT MATTERS\nStorage sprawl multiplies cost");
+  assert.match(slide.html, /class="lesson-goal"[\s\S]*Design a governed lakehouse/);
+  assert.deepEqual(slide.toc.map((t) => t.title), ["Why it matters"], "the goal is a callout, not a section");
+  assert.equal((slide.html.match(/class="lesson-label"/g) || []).length, 2);
+  assert.equal((slide.html.match(/<li>/g) || []).length, 2, "short slide fragments become a list");
+  assert.match(slide.html, /<p>Storage sprawl multiplies cost<\/p>/, "a single line under a label stays a sentence");
+  assert.doesNotMatch(lessonContent("## <svg onload=x>\n\n<script>x</script>\n<img onerror=x>\n\nSource: <iframe>").html, /<script>|<img|<svg|<iframe>/);
 });
 
 test("candidate POV: real grading, red/green review, explicit retry, saved scores, next lesson and reassessment", async (t) => {
