@@ -54,6 +54,9 @@ test(
         body,
         headers: { cookie: sessions.issue(token).split(";")[0] },
       });
+    await w.store.update("users", candidate.user.id, { email: "contract@example.test" });
+    const invited = await call(w.tok, "POST", "/admin/training/invitations", { email: "contract@example.test" });
+    assert.equal(invited.status, 200, JSON.stringify(invited.body));
     const login = await app({
       method: "POST",
       path: "/login",

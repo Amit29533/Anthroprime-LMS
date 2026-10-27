@@ -203,20 +203,6 @@ try {
       status: "published",
       course_ids: courses.map((c) => c.id),
     });
-    const candidates = await eod.all(
-      "/admin/candidates",
-      "candidates",
-      login.token,
-    );
-    const candidate =
-      candidates.find((c) => c.name === "Neha Kulkarni") ||
-      candidates.find((c) => c.name === "Rohit Verma");
-    if (candidate)
-      await call("/admin/assign", {
-        candidate_id: candidate.id,
-        kind: "path",
-        id: path.id,
-      });
     console.log(
       "Created 3 sample courses, 3 practice quizzes, and 1 ordered learning path in the local LMS database.",
     );

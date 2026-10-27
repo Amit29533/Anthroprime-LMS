@@ -11,6 +11,7 @@ const KINDS = new Set([
   "audit",
   "requests",
   "metadata",
+  "invitations",
 ]);
 export function createStore(file = ":memory:", instance = "test") {
   if (file !== ":memory:")

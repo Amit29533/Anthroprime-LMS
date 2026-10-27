@@ -111,6 +111,9 @@ test("real HTTP transport: shared login, cookie protection, CSRF, limits, header
       403,
       "custom request header required",
     );
+    const admin = await fetch(`${origin}/api/login`, { method: "POST", headers: { origin, "x-lms-request": "1" }, body: JSON.stringify({ username: "admin", password: "correct-password" }) });
+    const invite = await fetch(`${origin}/api/admin/training/invitations`, { method: "POST", headers: { origin, "x-lms-request": "1", cookie: admin.headers.get("set-cookie").split(";")[0] }, body: JSON.stringify({ email: "rohit@example.test" }) });
+    assert.equal(invite.status, 200);
     const login = await fetch(`${origin}/api/login`, {
       method: "POST",
       headers: { origin, "x-lms-request": "1" },

@@ -1,0 +1,1135 @@
+[
+  {
+    "module": "T01",
+    "lesson": "rsa-t01-l1",
+    "file": "4. Upskilling/T01/T01-Databricks-Architecture-Lakehouse-Data-Intelligence_2.pptx",
+    "sha256": "f93dd113aef7e67b37505d0c691ff91f01070146a6218125b809ef1285f397e7",
+    "slides": [
+      9,
+      18
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 15,
+        "question": "Q1"
+      },
+      {
+        "slide": 15,
+        "question": "Q2"
+      },
+      {
+        "slide": 18,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T01",
+    "lesson": "rsa-t01-l2",
+    "file": "4. Upskilling/T01/T01-Databricks-Architecture-Lakehouse-Data-Intelligence_2.pptx",
+    "sha256": "f93dd113aef7e67b37505d0c691ff91f01070146a6218125b809ef1285f397e7",
+    "slides": [
+      19,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 21,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T01",
+    "lesson": "rsa-t01-l3",
+    "file": "4. Upskilling/T01/T01-Databricks-Architecture-Lakehouse-Data-Intelligence_2.pptx",
+    "sha256": "f93dd113aef7e67b37505d0c691ff91f01070146a6218125b809ef1285f397e7",
+    "slides": [
+      25,
+      31
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 31,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T01",
+    "lesson": "rsa-t01-l4",
+    "file": "4. Upskilling/T01/T01-Databricks-Architecture-Lakehouse-Data-Intelligence_2.pptx",
+    "sha256": "f93dd113aef7e67b37505d0c691ff91f01070146a6218125b809ef1285f397e7",
+    "slides": [
+      32,
+      40
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 34,
+        "question": "Q1"
+      },
+      {
+        "slide": 40,
+        "question": "Q1"
+      },
+      {
+        "slide": 40,
+        "question": "Q3"
+      }
+    ]
+  },
+  {
+    "module": "T02",
+    "lesson": "rsa-t02-l1",
+    "file": "4. Upskilling/T02/T02-Data-Ingestion-Streaming-Change-Processing.pptx",
+    "sha256": "d703f6f9484b19acdeb0b86601888dabae9280f1dc748288665ccf7250176b5c",
+    "slides": [
+      9,
+      17
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 17,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T02",
+    "lesson": "rsa-t02-l2",
+    "file": "4. Upskilling/T02/T02-Data-Ingestion-Streaming-Change-Processing.pptx",
+    "sha256": "d703f6f9484b19acdeb0b86601888dabae9280f1dc748288665ccf7250176b5c",
+    "slides": [
+      18,
+      26
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 22,
+        "question": "Q1"
+      },
+      {
+        "slide": 26,
+        "question": "Q1"
+      },
+      {
+        "slide": 26,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T02",
+    "lesson": "rsa-t02-l3",
+    "file": "4. Upskilling/T02/T02-Data-Ingestion-Streaming-Change-Processing.pptx",
+    "sha256": "d703f6f9484b19acdeb0b86601888dabae9280f1dc748288665ccf7250176b5c",
+    "slides": [
+      27,
+      34
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 30,
+        "question": "Q1"
+      },
+      {
+        "slide": 30,
+        "question": "Q2"
+      },
+      {
+        "slide": 34,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T02",
+    "lesson": "rsa-t02-l4",
+    "file": "4. Upskilling/T02/T02-Data-Ingestion-Streaming-Change-Processing.pptx",
+    "sha256": "d703f6f9484b19acdeb0b86601888dabae9280f1dc748288665ccf7250176b5c",
+    "slides": [
+      35,
+      44
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 39,
+        "question": "Q1"
+      },
+      {
+        "slide": 44,
+        "question": "Q1"
+      },
+      {
+        "slide": 44,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T03",
+    "lesson": "rsa-t03-l1",
+    "file": "4. Upskilling/T03/T03-Lakeflow-Pipelines-Jobs-Data-Quality.pptx",
+    "sha256": "c6be3fa06f3b3bbc0b468577cb5a4acecc3943e9d16355b006050c01763b5c7c",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T03",
+    "lesson": "rsa-t03-l2",
+    "file": "4. Upskilling/T03/T03-Lakeflow-Pipelines-Jobs-Data-Quality.pptx",
+    "sha256": "c6be3fa06f3b3bbc0b468577cb5a4acecc3943e9d16355b006050c01763b5c7c",
+    "slides": [
+      17,
+      26
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 21,
+        "question": "Q1"
+      },
+      {
+        "slide": 26,
+        "question": "Q1"
+      },
+      {
+        "slide": 26,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T03",
+    "lesson": "rsa-t03-l3",
+    "file": "4. Upskilling/T03/T03-Lakeflow-Pipelines-Jobs-Data-Quality.pptx",
+    "sha256": "c6be3fa06f3b3bbc0b468577cb5a4acecc3943e9d16355b006050c01763b5c7c",
+    "slides": [
+      27,
+      34
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 30,
+        "question": "Q1"
+      },
+      {
+        "slide": 30,
+        "question": "Q2"
+      },
+      {
+        "slide": 34,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T03",
+    "lesson": "rsa-t03-l4",
+    "file": "4. Upskilling/T03/T03-Lakeflow-Pipelines-Jobs-Data-Quality.pptx",
+    "sha256": "c6be3fa06f3b3bbc0b468577cb5a4acecc3943e9d16355b006050c01763b5c7c",
+    "slides": [
+      35,
+      44
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 39,
+        "question": "Q1"
+      },
+      {
+        "slide": 44,
+        "question": "Q1"
+      },
+      {
+        "slide": 44,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T04",
+    "lesson": "rsa-t04-l1",
+    "file": "4. Upskilling/T04/T04-SQL-PySpark-Data-Engineering.pptx",
+    "sha256": "8410d5f1a9faa723e8e8034bf68f7c724d5ddff1e78cbf8d76e9b696a19f0747",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T04",
+    "lesson": "rsa-t04-l2",
+    "file": "4. Upskilling/T04/T04-SQL-PySpark-Data-Engineering.pptx",
+    "sha256": "8410d5f1a9faa723e8e8034bf68f7c724d5ddff1e78cbf8d76e9b696a19f0747",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T04",
+    "lesson": "rsa-t04-l3",
+    "file": "4. Upskilling/T04/T04-SQL-PySpark-Data-Engineering.pptx",
+    "sha256": "8410d5f1a9faa723e8e8034bf68f7c724d5ddff1e78cbf8d76e9b696a19f0747",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T04",
+    "lesson": "rsa-t04-l4",
+    "file": "4. Upskilling/T04/T04-SQL-PySpark-Data-Engineering.pptx",
+    "sha256": "8410d5f1a9faa723e8e8034bf68f7c724d5ddff1e78cbf8d76e9b696a19f0747",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T05",
+    "lesson": "rsa-t05-l1",
+    "file": "4. Upskilling/T05/T05-Delta-Lake-Performance-Compute-Cost-Optimization.pptx",
+    "sha256": "4fd6aa4cae6aaf3de536b94ee6c3fe707cfab00997b17188f48cbc693ee38d7b",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T05",
+    "lesson": "rsa-t05-l2",
+    "file": "4. Upskilling/T05/T05-Delta-Lake-Performance-Compute-Cost-Optimization.pptx",
+    "sha256": "4fd6aa4cae6aaf3de536b94ee6c3fe707cfab00997b17188f48cbc693ee38d7b",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T05",
+    "lesson": "rsa-t05-l3",
+    "file": "4. Upskilling/T05/T05-Delta-Lake-Performance-Compute-Cost-Optimization.pptx",
+    "sha256": "4fd6aa4cae6aaf3de536b94ee6c3fe707cfab00997b17188f48cbc693ee38d7b",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T05",
+    "lesson": "rsa-t05-l4",
+    "file": "4. Upskilling/T05/T05-Delta-Lake-Performance-Compute-Cost-Optimization.pptx",
+    "sha256": "4fd6aa4cae6aaf3de536b94ee6c3fe707cfab00997b17188f48cbc693ee38d7b",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T06",
+    "lesson": "rsa-t06-l1",
+    "file": "4. Upskilling/T06/T06-Unity-Catalog-Security-Data-Governance.pptx",
+    "sha256": "14079bebcf9532d4c94575ab11ffaab7e9732bd37079741dc0b1bddad678b1d0",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T06",
+    "lesson": "rsa-t06-l2",
+    "file": "4. Upskilling/T06/T06-Unity-Catalog-Security-Data-Governance.pptx",
+    "sha256": "14079bebcf9532d4c94575ab11ffaab7e9732bd37079741dc0b1bddad678b1d0",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T06",
+    "lesson": "rsa-t06-l3",
+    "file": "4. Upskilling/T06/T06-Unity-Catalog-Security-Data-Governance.pptx",
+    "sha256": "14079bebcf9532d4c94575ab11ffaab7e9732bd37079741dc0b1bddad678b1d0",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T06",
+    "lesson": "rsa-t06-l4",
+    "file": "4. Upskilling/T06/T06-Unity-Catalog-Security-Data-Governance.pptx",
+    "sha256": "14079bebcf9532d4c94575ab11ffaab7e9732bd37079741dc0b1bddad678b1d0",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T07",
+    "lesson": "rsa-t07-l1",
+    "file": "4. Upskilling/T07/T07-Software-Engineering-DevOps-Deployment-Automation.pptx",
+    "sha256": "8a0c2789a83013257b7edd3f2388fdd5c688b3b007834ae9edc420edd9a75e97",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T07",
+    "lesson": "rsa-t07-l2",
+    "file": "4. Upskilling/T07/T07-Software-Engineering-DevOps-Deployment-Automation.pptx",
+    "sha256": "8a0c2789a83013257b7edd3f2388fdd5c688b3b007834ae9edc420edd9a75e97",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T07",
+    "lesson": "rsa-t07-l3",
+    "file": "4. Upskilling/T07/T07-Software-Engineering-DevOps-Deployment-Automation.pptx",
+    "sha256": "8a0c2789a83013257b7edd3f2388fdd5c688b3b007834ae9edc420edd9a75e97",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T07",
+    "lesson": "rsa-t07-l4",
+    "file": "4. Upskilling/T07/T07-Software-Engineering-DevOps-Deployment-Automation.pptx",
+    "sha256": "8a0c2789a83013257b7edd3f2388fdd5c688b3b007834ae9edc420edd9a75e97",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T08",
+    "lesson": "rsa-t08-l1",
+    "file": "4. Upskilling/T08/T08-Enterprise-Architecture-Migration-Production-Operations_1.pptx",
+    "sha256": "13e0697c1ea39352ea21eb0c87d31c3563e624715479dcab07079e34a9f3cb86",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T08",
+    "lesson": "rsa-t08-l2",
+    "file": "4. Upskilling/T08/T08-Enterprise-Architecture-Migration-Production-Operations_1.pptx",
+    "sha256": "13e0697c1ea39352ea21eb0c87d31c3563e624715479dcab07079e34a9f3cb86",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T08",
+    "lesson": "rsa-t08-l3",
+    "file": "4. Upskilling/T08/T08-Enterprise-Architecture-Migration-Production-Operations_1.pptx",
+    "sha256": "13e0697c1ea39352ea21eb0c87d31c3563e624715479dcab07079e34a9f3cb86",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T08",
+    "lesson": "rsa-t08-l4",
+    "file": "4. Upskilling/T08/T08-Enterprise-Architecture-Migration-Production-Operations_1.pptx",
+    "sha256": "13e0697c1ea39352ea21eb0c87d31c3563e624715479dcab07079e34a9f3cb86",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T09",
+    "lesson": "rsa-t09-l1",
+    "file": "4. Upskilling/T09/T09-AIBI-Semantic-Analytics-Genie.pptx",
+    "sha256": "9ad1730e5b0f643982533a4313243c19d919d893d86ead77bd31ea25b51222f8",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T09",
+    "lesson": "rsa-t09-l2",
+    "file": "4. Upskilling/T09/T09-AIBI-Semantic-Analytics-Genie.pptx",
+    "sha256": "9ad1730e5b0f643982533a4313243c19d919d893d86ead77bd31ea25b51222f8",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "T09",
+    "lesson": "rsa-t09-l3",
+    "file": "4. Upskilling/T09/T09-AIBI-Semantic-Analytics-Genie.pptx",
+    "sha256": "9ad1730e5b0f643982533a4313243c19d919d893d86ead77bd31ea25b51222f8",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "T09",
+    "lesson": "rsa-t09-l4",
+    "file": "4. Upskilling/T09/T09-AIBI-Semantic-Analytics-Genie.pptx",
+    "sha256": "9ad1730e5b0f643982533a4313243c19d919d893d86ead77bd31ea25b51222f8",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "C01-C02",
+    "lesson": "rsa-c01-c02-l1",
+    "file": "4. Upskilling/C01 C02/C01-C02-Problem-Framing-Discovery-Solution-Design-Recommendation_1.pptx",
+    "sha256": "f356cc884d46ada2d59146d802ec6aa62955ee4dbe8019bef437f4c9897c6bed",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "C01-C02",
+    "lesson": "rsa-c01-c02-l2",
+    "file": "4. Upskilling/C01 C02/C01-C02-Problem-Framing-Discovery-Solution-Design-Recommendation_1.pptx",
+    "sha256": "f356cc884d46ada2d59146d802ec6aa62955ee4dbe8019bef437f4c9897c6bed",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "C01-C02",
+    "lesson": "rsa-c01-c02-l3",
+    "file": "4. Upskilling/C01 C02/C01-C02-Problem-Framing-Discovery-Solution-Design-Recommendation_1.pptx",
+    "sha256": "f356cc884d46ada2d59146d802ec6aa62955ee4dbe8019bef437f4c9897c6bed",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "C01-C02",
+    "lesson": "rsa-c01-c02-l4",
+    "file": "4. Upskilling/C01 C02/C01-C02-Problem-Framing-Discovery-Solution-Design-Recommendation_1.pptx",
+    "sha256": "f356cc884d46ada2d59146d802ec6aa62955ee4dbe8019bef437f4c9897c6bed",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "C03-C04",
+    "lesson": "rsa-c03-c04-l1",
+    "file": "4. Upskilling/C03 C04/C03-C04-Objection-Handling-Engagement-Execution.pptx",
+    "sha256": "e6363719f1b93519824da9228530b2c579605e792270f9860b9892becefc9a86",
+    "slides": [
+      9,
+      16
+    ],
+    "case_slides": [
+      5,
+      6
+    ],
+    "questions": [
+      {
+        "slide": 12,
+        "question": "Q1"
+      },
+      {
+        "slide": 12,
+        "question": "Q2"
+      },
+      {
+        "slide": 16,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "C03-C04",
+    "lesson": "rsa-c03-c04-l2",
+    "file": "4. Upskilling/C03 C04/C03-C04-Objection-Handling-Engagement-Execution.pptx",
+    "sha256": "e6363719f1b93519824da9228530b2c579605e792270f9860b9892becefc9a86",
+    "slides": [
+      17,
+      24
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 20,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q1"
+      },
+      {
+        "slide": 24,
+        "question": "Q2"
+      }
+    ]
+  },
+  {
+    "module": "C03-C04",
+    "lesson": "rsa-c03-c04-l3",
+    "file": "4. Upskilling/C03 C04/C03-C04-Objection-Handling-Engagement-Execution.pptx",
+    "sha256": "e6363719f1b93519824da9228530b2c579605e792270f9860b9892becefc9a86",
+    "slides": [
+      25,
+      32
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 28,
+        "question": "Q1"
+      },
+      {
+        "slide": 28,
+        "question": "Q2"
+      },
+      {
+        "slide": 32,
+        "question": "Q1"
+      }
+    ]
+  },
+  {
+    "module": "C03-C04",
+    "lesson": "rsa-c03-c04-l4",
+    "file": "4. Upskilling/C03 C04/C03-C04-Objection-Handling-Engagement-Execution.pptx",
+    "sha256": "e6363719f1b93519824da9228530b2c579605e792270f9860b9892becefc9a86",
+    "slides": [
+      33,
+      41
+    ],
+    "case_slides": [],
+    "questions": [
+      {
+        "slide": 36,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q1"
+      },
+      {
+        "slide": 41,
+        "question": "Q2"
+      }
+    ]
+  }
+]

@@ -11,6 +11,10 @@ import {
   formatDate,
 } from "./ui.js";
 import { courseEditor } from "./editor.js";
+import { trainingDashboard } from "./training.js";
+import { player, closeLearningWindow } from "./player.js";
+import { courseOverview } from "./course-overview.js";
+import { setupNavigation, closeNavigation, enterView, confirmNavigation, clearEditorGuard } from "./experience.js";
 
 let user = null;
 let eodUrl = "";
@@ -46,6 +50,7 @@ function shell(hash) {
         ["#/studio", "Course studio", "book"],
         ["#/paths", "Learning paths", "path"],
         ["#/learners", "Learners", "users"],
+        ["#/training", "Training Dashboard", "chart"],
         ["#/requests", "Reassessment", "chart"],
         ["#/activity", "Activity log", "clock"],
       ]
@@ -55,24 +60,29 @@ function shell(hash) {
         ["#/learning", "My learning", "path"],
         ["#/results", "My assessments", "chart"],
       ];
-  root.innerHTML = `<div class="workspace"><aside class="sidebar" id="sidebar"><a class="brand" href="#/home">${brand}</a>
+  root.innerHTML = `<div class="workspace"><aside class="sidebar" id="sidebar"><button class="sidebar-close" id="sidebar-close" aria-label="Close navigation">${icon("close")}</button><a class="brand" href="#/home">${brand}</a>
     <div class="nav-caption">${admin ? "MANAGE LEARNING" : "YOUR WORKSPACE"}</div><nav aria-label="Primary navigation">${nav.map(([href, text, ico]) => `<a href="${href}" class="nav-item ${hash === href ? "active" : ""}" ${hash === href ? 'aria-current="page"' : ""}>${icon(ico)}<span>${text}</span>${hash === href ? '<span class="nav-dot"></span>' : ""}</a>`).join("")}</nav>
     <div class="sidebar-note">${icon("path")}<strong>Potential, in progress.</strong><p>Small steps. Stronger capabilities.</p><a href="${esc(eodUrl)}" target="_blank" rel="noopener">Assessment platform ${icon("external")}</a></div>
-    <div class="sidebar-profile"><span class="avatar">${esc(initials(user.name))}</span><div><strong>${esc(user.name)}</strong><small>${admin ? "Learning administrator" : "Candidate workspace"}</small></div><button id="logout" title="Sign out" aria-label="Sign out">${icon("logout")}</button></div></aside>
-    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button><span>WORKSPACE</span><b>/</b><strong>${admin ? "Learning management" : "Personal development"}</strong></div><div class="topbar-tools"><span class="connected"><i></i>EOD connected</span><button id="theme" class="round-button" aria-label="Switch light and dark theme">◐</button><span class="avatar small-avatar">${esc(initials(user.name))}</span><button id="header-logout" class="logout-button" type="button">${icon("logout")}<span>Log out</span></button></div></header><main id="main-content" tabindex="-1"><div class="page-loading">Loading your workspace…</div></main><footer class="footer"><span>AnthroPrime Learning</span><span>Learn with purpose. Grow with evidence.</span></footer></div></div>`;
-  const signOut = (event) =>
-    action(event.currentTarget, async () => {
-      event.currentTarget.textContent = "Signing out…";
+    <div class="sidebar-profile"><span class="avatar">${esc(initials(user.name))}</span><div><strong>${esc(user.name)}</strong><small>${admin ? "Learning administrator" : "Candidate workspace"}</small></div><button id="logout" title="Sign out" aria-label="Sign out">${icon("logout")}</button></div></aside><button class="nav-scrim" id="nav-scrim" aria-label="Close navigation" hidden></button>
+    <div class="workspace-main"><header class="topbar"><div class="topbar-context"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button><span>WORKSPACE</span><b>/</b><strong>${admin ? "Learning management" : "Personal development"}</strong></div><div class="topbar-tools"><span class="connected"><i></i>ECOD account</span><button id="theme" class="round-button" aria-label="Switch to ${document.documentElement.dataset.theme === "dark" ? "light" : "dark"} theme">${icon(document.documentElement.dataset.theme === "dark" ? "sun" : "moon")}</button><span class="avatar small-avatar">${esc(initials(user.name))}</span><button id="header-logout" class="logout-button" type="button">${icon("logout")}<span>Log out</span></button></div></header><main id="main-content" tabindex="-1" aria-busy="true"><div class="page-loading" role="status"><span class="loading-orbit" aria-hidden="true"></span>Loading your workspace…</div></main><footer class="footer"><span>AnthroPrime Learning</span><span>Learn with purpose. Grow with evidence.</span></footer></div></div>`;
+  const signOut = async (event) => {
+    const button = event.currentTarget;
+    if (!(await confirmNavigation("#/"))) return;
+    return action(button, async () => {
+      button.textContent = "Signing out…";
       await api("/logout", { method: "POST" });
       user = null;
       go("#/");
     });
+  };
   document.getElementById("logout").onclick = signOut;
   document.getElementById("header-logout").onclick = signOut;
   document.getElementById("theme").onclick = () => {
     const next =
       document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
+    document.getElementById("theme").innerHTML = icon(next === "dark" ? "sun" : "moon");
+    document.getElementById("theme").setAttribute("aria-label", `Switch to ${next === "dark" ? "light" : "dark"} theme`);
     document.querySelector('meta[name="theme-color"]').content =
       next === "dark" ? "#15161b" : "#f5f4f1";
     try {
@@ -81,15 +91,15 @@ function shell(hash) {
       /* Optional persistence. */
     }
   };
-  document.getElementById("mobile-menu").onclick = (event) => {
-    const open = document.getElementById("sidebar").classList.toggle("open");
-    event.currentTarget.setAttribute("aria-expanded", String(open));
-  };
+  setupNavigation(root);
   return document.getElementById("main-content");
 }
 function login(message = "") {
+  closeNavigation();
+  closeLearningWindow();
+  clearEditorGuard();
   root.innerHTML = `<main class="signin"><section class="signin-story"><a class="brand" href="#/">${brand}</a><div class="signin-copy"><div class="eyebrow">THE NEXT CHAPTER IS YOURS</div><h1>Turn potential <br>into <em>progress.</em></h1><p>A personal space to build the capabilities that move you forward.</p><div class="journey-visual" aria-hidden="true"><span>01 <b>Discover</b></span><i></i><span>02 <b>Learn</b></span><i></i><span>03 <b>Grow</b></span></div></div><small>ANTHROPRIME · CAPABILITY DEVELOPMENT</small></section>
-    <section class="signin-form"><div class="signin-form-inner"><span class="eyebrow">WELCOME TO ANTHROPRIME LEARNING</span><h2>A little learning.<br>A bigger future.</h2><p>Sign in with your existing EOD account.</p><form id="login-form">${field("Username or email", "username", "", { required: true, max: 200 })}${field("Password", "password", "", { type: "password", required: true })}${field("Authenticator or backup code", "otp")}<p class="help">Only needed if authenticator protection is enabled.</p><p class="form-error" role="alert" ${message ? "" : "hidden"}>${esc(message)}</p><button class="button primary signin-submit" type="submit">Sign in to learning ${icon("arrow")}</button></form><div class="account-note">${icon("lock")}<span>One account, across assessment and learning.<br>Your password is verified by EOD.</span></div><a href="${esc(eodUrl)}" class="text-link" target="_blank" rel="noopener">Open assessment platform ${icon("external")}</a></div></section></main>`;
+    <section class="signin-form"><div class="signin-form-inner"><span class="eyebrow">WELCOME TO ANTHROPRIME LEARNING</span><h2>A little learning.<br>A bigger future.</h2><p>Invitation-only training. Sign in with your existing ECOD account.</p><form id="login-form">${field("Username or email", "username", "", { required: true, max: 200 })}${field("Password", "password", "", { type: "password", required: true })}${field("Authenticator or backup code", "otp")}<p class="help">Only needed if authenticator protection is enabled.</p><p class="form-error" role="alert" ${message ? "" : "hidden"}>${esc(message)}</p><button class="button primary signin-submit" type="submit">Sign in to learning ${icon("arrow")}</button></form><div class="account-note">${icon("lock")}<span>One account, across assessment and learning.<br>Your password is verified by ECOD.</span></div><a href="${esc(eodUrl)}" class="text-link" target="_blank" rel="noopener">Open assessment platform ${icon("external")}</a></div></section></main>`;
   const form = document.getElementById("login-form");
   form.elements.username.autocomplete = "username";
   form.elements.password.autocomplete = "current-password";
@@ -98,6 +108,7 @@ function login(message = "") {
     const b = form.querySelector("[type=submit]");
     b.disabled = true;
     b.textContent = "Signing in…";
+    b.setAttribute("aria-busy", "true");
     const error = form.querySelector(".form-error");
     error.hidden = true;
     try {
@@ -110,14 +121,17 @@ function login(message = "") {
     } catch (err) {
       error.textContent = err.message;
       error.hidden = false;
+      error.tabIndex = -1;
+      error.focus();
     } finally {
       b.disabled = false;
+      b.removeAttribute("aria-busy");
       b.innerHTML = `Sign in to learning ${icon("arrow")}`;
     }
   };
 }
 function courseCard(course, index, enrollment, recommendation = false) {
-  return `<article class="course-card"><div class="course-art art-${index % 4}"><span class="art-label">ANTHROPRIME / ${esc(course.level || "foundation")}</span><div class="art-geometry" aria-hidden="true"><i></i><i></i><i></i></div><span class="art-symbol">${icon(index % 2 ? "path" : "book")}</span></div><div class="course-card-body"><div class="course-tags">${tag(course.level || "Foundation")}${recommendation && course.gap_names?.length ? tag("Recommended for you", "green") : ""}</div><h3>${esc(course.title)}</h3><p>${esc(course.summary)}</p>${course.gap_names?.length ? `<div class="gap-match">${icon("star")} Builds ${esc(course.gap_names.slice(0, 2).join(" & "))}</div>` : ""}<div class="course-meta"><span>${icon("clock")}${course.duration_minutes} min</span><span>${course.lesson_count} lessons</span></div>${enrollment ? `<div class="progress-label"><span>${enrollment.progress.complete ? "Completed" : `${enrollment.progress.completed} of ${enrollment.progress.total} lessons`}</span><b>${enrollment.progress.percent}%</b></div>${progress(enrollment.progress.percent)}` : ""}<button class="button ${enrollment ? "primary" : "outline"} full" ${enrollment ? `data-open="${enrollment.id}"` : `data-enroll="${course.id}"`}>${enrollment ? (enrollment.progress.complete ? "Revisit course" : "Continue learning") : "Start course"}${icon("arrow")}</button></div></article>`;
+  return `<article class="course-card"><div class="course-art art-${index % 4}"><span class="art-label">ANTHROPRIME / ${esc(course.level || "foundation")}</span><div class="art-geometry" aria-hidden="true"><i></i><i></i><i></i></div><span class="art-symbol">${icon(index % 2 ? "path" : "book")}</span></div><div class="course-card-body"><div class="course-tags">${tag(course.level || "Foundation")}${recommendation && course.gap_names?.length ? tag("Recommended for you", "green") : ""}</div><h3>${esc(course.title)}</h3><p>${esc(course.summary)}</p>${course.gap_names?.length ? `<div class="gap-match">${icon("star")} Builds ${esc(course.gap_names.slice(0, 2).join(" & "))}</div>` : ""}<div class="course-meta"><span>${icon("clock")}${course.duration_minutes} min</span><span>${course.lesson_count} lessons</span></div>${enrollment ? `<div class="progress-label"><span>${enrollment.progress.complete ? "Completed" : `${enrollment.progress.completed} of ${enrollment.progress.total} lessons`}</span><b>${enrollment.progress.percent}%</b></div>${progress(enrollment.progress.percent)}` : ""}<button class="button ${enrollment ? "primary" : "outline"} full" ${enrollment ? `data-open="${enrollment.id}"` : `data-enroll="${course.id}"`}>${enrollment ? (enrollment.progress.complete ? "Revisit course" : enrollment.progress.completed ? "Continue learning" : "Start learning") : "Start course"}${icon("arrow")}</button></div></article>`;
 }
 function pathCard(path, index, enrolled) {
   const courses = enrolled
@@ -175,7 +189,7 @@ function learnerView(view, data, hash) {
   }
   if (hash === "#/home") {
     view.innerHTML += `<section class="learning-hero"><div><span class="eyebrow">A CLEARER PATH FORWARD</span><h2>${continueCourse ? "Keep your<br><em>momentum.</em>" : "Your next chapter<br>starts <em>here.</em>"}</h2><p>${continueCourse ? esc(continueCourse.course.title) : "Thoughtful courses. Small moments of practice. Meaningful progress, one lesson at a time."}</p>${continueCourse ? `<button class="button warm" data-open="${continueCourse.id}">Continue learning ${icon("arrow")}</button><div class="hero-progress">${progress(continueCourse.progress.percent)}<span>${continueCourse.progress.percent}% complete</span></div>` : '<a class="button warm" href="#/catalog">Find your next course ' + icon("arrow") + "</a>"}</div><div class="hero-illustration" aria-hidden="true"><div class="observatory-topline">YOUR CONNECTED LEARNING JOURNEY</div><svg class="observatory-network" viewBox="0 0 340 260" fill="none"><path class="network-line" d="M40 55 116 28 214 46 300 80 273 170 181 220 75 183 40 55 168 112 300 80M116 28 168 112 214 46 273 170 168 112 75 183 181 220M40 55 214 46M75 183 273 170M116 28 181 220"/><g class="network-dot"><circle cx="40" cy="55" r="2"/><circle cx="116" cy="28" r="2.5"/><circle cx="214" cy="46" r="2"/><circle cx="300" cy="80" r="2"/><circle cx="273" cy="170" r="2"/><circle cx="181" cy="220" r="2.5"/><circle cx="75" cy="183" r="2"/><circle cx="62" cy="110" r="1.3"/><circle cx="251" cy="110" r="1.3"/><circle cx="150" cy="60" r="1.3"/><circle cx="210" cy="190" r="1.3"/></g></svg><div class="observatory-orbit"></div><div class="observatory-orbit second"></div><div class="observatory-core"><img src="/assets/anthroprime-logo.jpg" alt="" width="67" height="53"></div><span class="observatory-node node-learn">${icon("book")} Learn <small>01</small></span><span class="observatory-node node-practice">${icon("quiz")} Practice <small>02</small></span><span class="observatory-node node-grow">${icon("chart")} Grow <small>03</small></span><div class="observatory-bottomline"><span>HUMAN POTENTIAL</span><span>CONNECTED CAPABILITY</span></div></div></section>
-    <div class="stats"><div><span class="stat-icon">${icon("book")}</span><strong>${active.length}</strong><span>Courses in progress</span></div><div><span class="stat-icon green-text">${icon("check")}</span><strong>${completed.length}</strong><span>Courses completed</span></div><div><span class="stat-icon gold-text">${icon("path")}</span><strong>${enrolled.reduce((sum, e) => sum + e.progress.completed, 0)}</strong><span>Lessons completed</span></div></div>`;
+    <div class="stats"><div><span class="stat-icon">${icon("book")}</span><strong>${active.length}</strong><span>Courses to complete</span></div><div><span class="stat-icon green-text">${icon("check")}</span><strong>${completed.length}</strong><span>Courses completed</span></div><div><span class="stat-icon gold-text">${icon("path")}</span><strong>${enrolled.reduce((sum, e) => sum + e.progress.completed, 0)}</strong><span>Lessons completed</span></div></div>`;
   }
   if (hash === "#/catalog") {
     view.innerHTML += `<div class="library-toolbar"><label class="search"><span class="sr-only">Search courses and paths</span><input id="course-search" type="search" placeholder="Find your next skill…" value="${esc(filter)}"></label><div class="tabs" aria-label="Content type">${[
@@ -277,109 +291,9 @@ function learnerView(view, data, hash) {
   wireLearning(view);
 }
 
-async function player(view, id) {
-  const data = await api(`/enrollments/${id}`);
-  let done = new Set(data.completed_lessons);
-  let enrollment = data.enrollment;
-  let request = data.request;
-  const course = data.course;
-  const lessons = course.curriculum.flatMap((m) => m.lessons);
-  let selected =
-    new URLSearchParams(location.hash.split("?")[1] || "").get("lesson") ||
-    enrollment.progress.next_lesson_id ||
-    lessons[0]?.id;
-  if (!lessons.some((l) => l.id === selected)) selected = lessons[0]?.id;
-  let quizResult = null;
-  const paint = () => {
-    const lesson = lessons.find((l) => l.id === selected);
-    const index = lessons.indexOf(lesson);
-    const locked = lessons.slice(0, index).some((l) => !done.has(l.id));
-    const unlocked = lessons.findIndex((l) => !done.has(l.id));
-    view.innerHTML = `<a class="breadcrumb" href="#/learning">← Back to my learning</a><div class="player-heading"><div><span class="eyebrow">${esc(course.level)} COURSE</span><h1>${esc(course.title)}</h1></div><div class="player-progress"><strong>${enrollment.progress.percent}% complete</strong>${progress(enrollment.progress.percent)}</div></div><div class="player-layout"><aside class="curriculum"><div class="curriculum-head"><h2>Your course</h2><span>${done.size}/${lessons.length} lessons</span></div>${course.curriculum
-      .map(
-        (m, mi) =>
-          `<div class="curriculum-module"><h3><span>${String(mi + 1).padStart(2, "0")}</span>${esc(m.title)}</h3>${m.lessons
-            .map((l) => {
-              const li = lessons.indexOf(l);
-              const disabled = unlocked >= 0 && li > unlocked;
-              return `<button data-lesson="${l.id}" class="lesson-nav ${selected === l.id ? "selected" : ""} ${done.has(l.id) ? "done" : ""}" ${disabled ? "disabled" : ""} ${selected === l.id ? 'aria-current="step"' : ""}><span class="lesson-state">${icon(done.has(l.id) ? "check" : disabled ? "lock" : l.kind === "quiz" ? "quiz" : l.kind === "video" ? "play" : "book")}</span><span>${esc(l.title)}<small>${kindLabel(l.kind)} · ${l.minutes} min</small></span></button>`;
-            })
-            .join("")}</div>`,
-      )
-      .join(
-        "",
-      )}</aside><article class="lesson-content"><div class="lesson-kicker"><span>${kindLabel(lesson.kind)} / LESSON ${index + 1} OF ${lessons.length}</span>${done.has(lesson.id) ? tag("Completed", "green") : tag(`${lesson.minutes} min`)}</div><h2 tabindex="-1" id="lesson-title">${esc(lesson.title)}</h2>${locked ? "<p>Complete the earlier lessons to unlock this lesson.</p>" : `${lesson.body ? `<div class="lesson-prose">${esc(lesson.body)}</div>` : ""}${lesson.kind === "video" ? `<video class="lesson-video" controls preload="metadata" src="${esc(lesson.resource_url)}" aria-label="${esc(lesson.title)}"></video><p class="help">If this resource is not a direct video file, use the resource link below.</p>` : ""}${["video", "resource"].includes(lesson.kind) ? `<a class="button outline" href="${esc(lesson.resource_url)}" target="_blank" rel="noopener noreferrer">Open learning resource ${icon("external")}</a>` : ""}${lesson.kind === "quiz" ? `<p class="quiz-intro">A short check to put your learning into practice. Reach ${lesson.quiz.pass_percent}% to complete this lesson. You can retry.</p><form id="practice-form">${lesson.quiz.questions.map((q, qi) => `<fieldset class="quiz-question"><legend><span>${String(qi + 1).padStart(2, "0")}</span>${esc(q.prompt)}</legend>${q.options.map((option) => `<label class="quiz-option"><input type="radio" name="${q.id}" value="${option.id}" required><span>${esc(option.label)}</span></label>`).join("")}${quizResult ? `<p class="quiz-feedback ${quizResult.feedback[qi].correct ? "correct" : "incorrect"}">${quizResult.feedback[qi].correct ? "Correct." : `Correct answer: ${esc((q.options.find((o) => o.id === quizResult.feedback[qi].correct_option_id)?.label || "").replace(/[.!?]$/, ""))}.`} ${esc(quizResult.feedback[qi].explanation)}</p>` : ""}</fieldset>`).join("")}<div class="quiz-footer">${quizResult ? `<strong>${quizResult.percent}% · ${quizResult.correct}/${quizResult.total} correct · ${quizResult.passed ? "Passed" : "Keep practicing"}</strong>` : ""}<button type="submit" class="button primary">${quizResult ? "Try again" : "Check my answers"} ${icon("arrow")}</button></div></form>` : ""}<div class="lesson-bottom"><span>${icon("lock")}Your progress is saved when you complete a lesson.</span>${lesson.kind === "quiz" && !done.has(lesson.id) ? "" : `<button id="complete-lesson" class="button primary">${done.has(lesson.id) ? (index === lessons.length - 1 ? "Course complete" : "Next lesson") : "Mark complete & continue"} ${icon(done.has(lesson.id) && index === lessons.length - 1 ? "check" : "arrow")}</button>`}</div>`}${enrollment.progress.complete ? `<section class="completion-panel"><span class="completion-icon">${icon("check")}</span><div><span class="eyebrow">A STEP WORTH CELEBRATING</span><h3>You completed this course.</h3><p>Put your new capability into practice. When you’re ready, request a formal reassessment.</p>${request?.assessment_id ? `<a href="${esc(eodUrl)}/#/assessments/${request.assessment_id}/quiz" target="_blank" rel="noopener" class="button primary">Open reassessment ${icon("external")}</a>` : request ? tag("Reassessment requested · awaiting allocation", "green") : '<button id="request-reassessment" class="button outline">Request reassessment ' + icon("arrow") + "</button>"}</div></section>` : ""}</article></div>`;
-    view.querySelectorAll("[data-lesson]").forEach((b) => {
-      b.onclick = () => {
-        selected = b.dataset.lesson;
-        quizResult = null;
-        history.replaceState(null, "", `#/course/${id}?lesson=${selected}`);
-        paint();
-        view.querySelector("#lesson-title")?.focus({ preventScroll: true });
-      };
-    });
-    const next = view.querySelector("#complete-lesson");
-    if (next) {
-      if (done.has(lesson.id) && index === lessons.length - 1)
-        next.disabled = true;
-      next.onclick = () =>
-        action(next, async () => {
-          if (!done.has(lesson.id)) {
-            const result = await api(`/enrollments/${id}/complete`, {
-              method: "POST",
-              body: { lesson_id: lesson.id },
-            });
-            enrollment = result.enrollment;
-            done = new Set(result.completed_lessons);
-          }
-          if (index + 1 < lessons.length) selected = lessons[index + 1].id;
-          quizResult = null;
-          history.replaceState(null, "", `#/course/${id}?lesson=${selected}`);
-          paint();
-          view.querySelector("#lesson-title")?.focus({ preventScroll: true });
-        });
-    }
-    const practice = view.querySelector("#practice-form");
-    if (practice)
-      practice.onsubmit = (event) => {
-        event.preventDefault();
-        const answers = Object.fromEntries(new FormData(practice));
-        action(practice.querySelector("[type=submit]"), async () => {
-          const result = await api(`/enrollments/${id}/quiz`, {
-            method: "POST",
-            body: { lesson_id: lesson.id, answers },
-          });
-          quizResult = result.result;
-          enrollment = result.enrollment;
-          done = new Set(result.completed_lessons);
-          paint();
-          for (const [name, value] of Object.entries(answers)) {
-            const radio = [...view.querySelectorAll("input[type=radio]")].find(
-              (input) => input.name === name && input.value === value,
-            );
-            if (radio) radio.checked = true;
-          }
-          toast(
-            quizResult.passed
-              ? "Practice complete. Your progress is saved."
-              : "Review the explanations and try again.",
-          );
-        });
-      };
-    const requestButton = view.querySelector("#request-reassessment");
-    if (requestButton)
-      requestButton.onclick = () =>
-        action(requestButton, async () => {
-          request = (
-            await api(`/enrollments/${id}/reassessment`, { method: "POST" })
-          ).request;
-          paint();
-        });
-  };
-  paint();
-}
 
 function assignment(data, preset = null) {
+  const candidates = data.candidates.filter((c) => c.training_access);
   const options = [
     ...data.courses
       .filter((c) => c.status === "published")
@@ -388,14 +302,14 @@ function assignment(data, preset = null) {
       .filter((p) => p.status === "published")
       .map((p) => ({ key: `path:${p.id}`, label: `Path · ${p.title}` })),
   ];
-  if (!options.length || !data.candidates.length)
+  if (!options.length || !candidates.length)
     return toast(
-      "Publish learning content and create a candidate in EOD before assigning.",
+      "Publish a course and invite a candidate from Training Dashboard before assigning.",
       true,
     );
   dialog(
     "Assign learning",
-    `<p class="dialog-intro">Give a candidate a focused next step. Existing progress is preserved.</p><label class="field"><span>Candidate</span><select name="candidate_id" required><option value="">Choose a candidate</option>${data.candidates.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></label><label class="field"><span>Course or learning path</span><select name="item" required>${options.map((o) => `<option value="${o.key}" ${o.key === preset ? "selected" : ""}>${esc(o.label)}</option>`).join("")}</select></label>`,
+    `<p class="dialog-intro">Give a candidate a focused next step. Existing progress is preserved.</p><label class="field"><span>Candidate</span><select name="candidate_id" required><option value="">Choose a candidate</option>${candidates.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></label><label class="field"><span>Course or learning path</span><select name="item" required>${options.map((o) => `<option value="${o.key}" ${o.key === preset ? "selected" : ""}>${esc(o.label)}</option>`).join("")}</select></label>`,
     "Assign learning",
     async (form) => {
       const [kind, id] = form.get("item").split(":");
@@ -543,40 +457,50 @@ async function render() {
     login();
     return;
   }
+  if (!(await confirmNavigation(location.hash)) || current !== renderId) return;
   const hash = location.hash.split("?")[0] || "#/home";
+  const allowed = isAdmin() ? ["#/home", "#/studio", "#/paths", "#/learners", "#/training", "#/requests", "#/activity"] : ["#/home", "#/catalog", "#/learning", "#/results"];
+  if (!allowed.includes(hash) && !(isAdmin() ? /^#\/course-editor\/[a-zA-Z0-9_-]+$/.test(hash) : /^#\/course\/[a-zA-Z0-9_-]+$/.test(hash))) { go("#/home"); return; }
+  closeLearningWindow();
   const view = shell(hash);
   try {
     if (hash.startsWith("#/course/") && !isAdmin()) {
-      await player(view, hash.split("/")[2]);
+      if (new URLSearchParams(location.hash.split("?")[1] || "").has("lesson")) await player(view, hash.split("/")[2], { eodUrl });
+      else await courseOverview(view, hash.split("/")[2]);
+      enterView(view);
       return;
     }
     if (hash.startsWith("#/course-editor/") && isAdmin()) {
       await courseEditor(view, hash.split("/")[2], go);
+      enterView(view);
+      return;
+    }
+    if (isAdmin() && hash === "#/training") {
+      await trainingDashboard(view, { api, esc });
+      enterView(view);
       return;
     }
     const data = await api(isAdmin() ? "/admin/overview" : "/learn");
     if (current !== renderId || !view.isConnected) return;
     if (isAdmin()) adminView(view, data, hash);
     else learnerView(view, data, hash);
+    enterView(view);
   } catch (err) {
     if (current !== renderId || !view.isConnected) return;
     view.innerHTML = `<div class="error-state"><span>${icon("book")}</span><h1>Let’s get you back on track.</h1><p>${esc(err.message)}</p><button class="button primary" id="retry">Try again</button><a class="button subtle" href="#/home">Learning home</a></div>`;
+    view.removeAttribute("aria-busy");
     view.querySelector("#retry").onclick = render;
   }
 }
 window.addEventListener("hashchange", render);
-window.addEventListener("session-ended", () => {
+window.addEventListener("session-ended", (event) => {
   user = null;
-  render();
+  renderId += 1;
+  eodUrl = event.detail?.eodUrl || eodUrl;
+  login(event.detail?.message || "Your session ended. Sign in again to continue.");
 });
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    document.getElementById("sidebar")?.classList.remove("open");
-    document
-      .getElementById("mobile-menu")
-      ?.setAttribute("aria-expanded", "false");
-  }
-});
+window.addEventListener("offline", () => toast("You’re offline. Progress already saved is safe; reconnect before submitting.", true));
+window.addEventListener("online", () => toast("You’re back online. You can continue learning."));
 document.querySelector(".skip").onclick = (event) => {
   event.preventDefault();
   document.getElementById("main-content")?.focus();
@@ -587,5 +511,6 @@ try {
   eodUrl = session.eod_web_url;
   await render();
 } catch (err) {
+  eodUrl = err.eodUrl || eodUrl;
   login(err.message);
 }

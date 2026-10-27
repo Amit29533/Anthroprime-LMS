@@ -92,7 +92,7 @@ export function validateCourse(input) {
         )
           return "Published videos and resources need an HTTPS link.";
       }
-      if (lesson.kind === "quiz") {
+      if (lesson.kind === "quiz" || lesson.quiz) {
         const quiz = lesson.quiz;
         if (
           !quiz ||
@@ -149,7 +149,7 @@ export function validateCourse(input) {
   if (count > 80) return "Use up to eighty lessons per course.";
   if (input.status === "published" && !count)
     return "Add at least one lesson before publishing.";
-  if (JSON.stringify(input.curriculum).length > 280000)
+  if (JSON.stringify(input.curriculum).length > 500000)
     return "Split this content into smaller courses.";
   return null;
 }
@@ -173,7 +173,7 @@ export function courseFields(input) {
         minutes: lesson.minutes,
         body: lesson.body,
         resource_url: lesson.resource_url || "",
-        ...(lesson.kind === "quiz"
+        ...(lesson.quiz
           ? {
               quiz: {
                 pass_percent: lesson.quiz.pass_percent,
