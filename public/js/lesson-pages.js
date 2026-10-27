@@ -60,11 +60,22 @@ export function lessonPages(lesson) {
   return { pages, source, original: lesson.body };
 }
 
+// A short label line ("Core ideas", "WHY IT MATTERS") followed by a sentence reads as a subheading, not a bullet.
+const isLabel = (line, next) => /^[A-Za-z][A-Za-z &/-]{1,40}$/.test(line) && line.split(/\s+/).length <= 5 && next && next.split(/\s+/).length > 6;
+function pointsMarkup(lines) {
+  let html = "", items = [];
+  const flush = () => { if (items.length) html += `<ul class="reading-points">${items.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`; items = []; };
+  lines.forEach((line, i) => {
+    if (isLabel(line, lines[i + 1])) { flush(); html += `<h3 class="reading-subhead">${esc(line)}</h3>`; }
+    else items.push(line);
+  });
+  flush();
+  return html;
+}
+
 export function readingMarkup(page) {
   const cards = page.cards?.map((card) => `<div class="concept-card">${card.icon ? `<span class="concept-icon">${icon(card.icon)}</span>` : ""}<h3>${esc(card.title)}</h3><p>${esc(card.text)}</p></div>`).join("") || "";
   const lines = page.lines || [];
-  const content = lines.length > 2
-    ? `<ul class="reading-points">${lines.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>`
-    : lines.map((line) => `<p>${esc(line)}</p>`).join("");
+  const content = lines.length > 2 ? pointsMarkup(lines) : lines.map((line) => `<p>${esc(line)}</p>`).join("");
   return `${page.lead ? `<p class="reading-lead">${esc(page.lead)}</p>` : ""}${cards ? `<div class="concept-grid ${page.kind === "compare" ? "two" : ""}" aria-label="${esc(page.title)}">${cards}</div>` : ""}${page.body ? `<p>${esc(page.body)}</p>` : ""}${content}${page.takeaway ? `<div class="reading-takeaway"><span>${icon(page.kind === "apply" ? "quiz" : "check")}</span><p><strong>${page.kind === "apply" ? "Before you continue" : "Keep in mind"}</strong>${esc(page.takeaway)}</p></div>` : ""}`;
 }
