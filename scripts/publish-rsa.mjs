@@ -6,6 +6,7 @@
  *   LMS_URL=https://learning.example.com EOD_API_URL=https://ecod.example.com/api \
  *   ECOD_ADMIN_USERNAME=admin ECOD_ADMIN_PASSWORD=... npm run publish:rsa
  */
+import { createInterface } from "node:readline";
 import { createEodClient } from "../src/integrations/eod.mjs";
 import { validateCourse } from "../src/domain/learning.mjs";
 import { rsaCourse } from "../content/rsa-course.mjs";
@@ -13,8 +14,30 @@ import { rsaCourse } from "../content/rsa-course.mjs";
 const lmsUrl = new URL(process.env.LMS_URL || "");
 if (lmsUrl.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(lmsUrl.hostname))
   throw new Error("Set LMS_URL to the hosted LMS address (HTTPS).");
-const username = process.env.ECOD_ADMIN_USERNAME || "admin";
-const password = process.env.ECOD_ADMIN_PASSWORD;
+/** Ask in the terminal without echoing what is typed. */
+async function askHidden(question) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+  rl._writeToOutput = (text) => {
+    if (text.startsWith(question)) process.stdout.write(question);
+  };
+  const answer = await new Promise((resolve) => rl.question(question, resolve));
+  rl.close();
+  process.stdout.write("\n");
+  return answer;
+}
+async function ask(question) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise((resolve) => rl.question(question, resolve));
+  rl.close();
+  return answer.trim();
+}
+const username =
+  process.env.ECOD_ADMIN_USERNAME ||
+  (process.stdin.isTTY ? await ask("ECOD admin username [admin]: ") : "") ||
+  "admin";
+const password =
+  process.env.ECOD_ADMIN_PASSWORD ||
+  (process.stdin.isTTY ? await askHidden(`ECOD password for ${username}: `) : "");
 if (!password) throw new Error("Set ECOD_ADMIN_PASSWORD to an ECOD administrator password.");
 
 const eod = createEodClient({ apiUrl: process.env.EOD_API_URL, webUrl: process.env.EOD_WEB_URL });

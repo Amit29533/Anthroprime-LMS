@@ -4,3 +4,6 @@ data/
 *.log
 .probe/
 coverage/
+
+# Local Netlify folder
+.netlify
