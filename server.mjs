@@ -6,6 +6,12 @@ import { createStore } from "./src/store.mjs";
 import { createSessions } from "./src/session.mjs";
 import { createEodClient } from "./src/integrations/eod.mjs";
 import { createApp } from "./src/app.mjs";
+import {
+  MAX_BODY_BYTES,
+  SECURITY_HEADERS,
+  createLoginLimiter,
+  handleApi,
+} from "./src/gateway.mjs";
 
 const production = process.env.NODE_ENV === "production";
 const port = Number(process.env.PORT || 3140);
@@ -37,14 +43,9 @@ const mime = {
   ".woff2": "font/woff2",
   ".txt": "text/plain; charset=utf-8",
 };
-const rates = new Map();
+const limited = createLoginLimiter();
 const headers = {
-  "x-content-type-options": "nosniff",
-  "referrer-policy": "strict-origin-when-cross-origin",
-  "x-frame-options": "DENY",
-  "permissions-policy": "camera=(), microphone=(), geolocation=()",
-  "content-security-policy":
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src https:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+  ...SECURITY_HEADERS,
   ...(production ? { "strict-transport-security": "max-age=31536000" } : {}),
 };
 const server = http.createServer(async (req, res) => {
@@ -66,59 +67,28 @@ const server = http.createServer(async (req, res) => {
         version: "0.1.0",
       });
     if (url.pathname.startsWith("/api/")) {
-      if (!["GET", "POST", "PUT"].includes(req.method))
-        return reply(405, { error: "Method not allowed." });
-      if (
-        req.method !== "GET" &&
-        (req.headers.origin !== new URL(origin).origin ||
-          req.headers["x-lms-request"] !== "1")
-      )
-        return reply(403, {
-          error: "Open this action from the learning platform.",
-        });
-      if (url.pathname === "/api/login") {
-        const address = req.socket.remoteAddress;
-        const now = Date.now();
-        for (const [key, entry] of rates)
-          if (entry.until < now) rates.delete(key);
-        const rate = rates.get(address) || { count: 0, until: now + 60000 };
-        rate.count += 1;
-        rates.set(address, rate);
-        if (rate.count > 20)
-          return reply(
-            429,
-            { error: "Too many sign-in attempts. Please wait a minute." },
-            { "retry-after": "60" },
-          );
-      }
-      const chunks = [];
-      let bytes = 0;
-      if (Number(req.headers["content-length"] || 0) > 1000000) {
-        req.resume();
-        return reply(413, {
-          error: "This course is too large. Split it into smaller courses.",
-        });
-      }
-      for await (const chunk of req) {
-        bytes += chunk.length;
-        if (bytes > 1000000)
-          return reply(413, {
-            error: "This course is too large. Split it into smaller courses.",
-          });
-        chunks.push(chunk);
-      }
-      const raw = Buffer.concat(chunks).toString("utf8");
-      let body;
-      try {
-        body = raw ? JSON.parse(raw) : {};
-      } catch {
-        return reply(400, { error: "Invalid JSON request." });
-      }
-      const result = await app({
+      const result = await handleApi({
         method: req.method,
-        path: url.pathname.slice(4),
+        pathname: url.pathname,
         headers: req.headers,
-        body,
+        address: req.socket.remoteAddress,
+        origin,
+        limited,
+        app,
+        async readBody() {
+          if (Number(req.headers["content-length"] || 0) > MAX_BODY_BYTES) {
+            req.resume();
+            return null;
+          }
+          const chunks = [];
+          let bytes = 0;
+          for await (const chunk of req) {
+            bytes += chunk.length;
+            if (bytes > MAX_BODY_BYTES) return null;
+            chunks.push(chunk);
+          }
+          return Buffer.concat(chunks).toString("utf8");
+        },
       });
       return reply(result.status, result.body, result.headers);
     }

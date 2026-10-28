@@ -13,7 +13,7 @@ const KINDS = new Set([
   "metadata",
   "invitations",
 ]);
-export function createStore(file = ":memory:", instance = "test") {
+export function createStore(file = ":memory:", instance = "test", { rows } = {}) {
   if (file !== ":memory:")
     fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
   const db = new DatabaseSync(file, { timeout: 5000 });
@@ -22,6 +22,21 @@ export function createStore(file = ":memory:", instance = "test") {
     CREATE INDEX IF NOT EXISTS learner_lookup ON records(kind,json_extract(data,'$.learner_id'));
     CREATE UNIQUE INDEX IF NOT EXISTS unique_course_enrollment ON records(json_extract(data,'$.learner_id'),json_extract(data,'$.course_id')) WHERE kind='enrollments';
     CREATE UNIQUE INDEX IF NOT EXISTS unique_path_enrollment ON records(json_extract(data,'$.learner_id'),json_extract(data,'$.path_id')) WHERE kind='path_enrollments';`);
+  // Rows from a hosted snapshot (Netlify Blobs) load in their saved order, so
+  // newest-first listings read the same as they do from a database file.
+  if (rows?.length) {
+    const load = db.prepare("INSERT INTO records(kind,id,data) VALUES(?,?,?)");
+    db.exec("BEGIN");
+    try {
+      for (const row of rows) load.run(row.kind, row.id, JSON.stringify(row.data));
+      db.exec("COMMIT");
+    } catch (err) {
+      db.exec("ROLLBACK");
+      db.close();
+      throw err;
+    }
+  }
+  let writes = 0;
   const check = (kind) => {
     if (!KINDS.has(kind)) throw new Error("Unknown record kind");
   };
@@ -55,6 +70,7 @@ export function createStore(file = ":memory:", instance = "test") {
         row.id,
         JSON.stringify(row),
       );
+      writes += 1;
       return row;
     },
     update(kind, id, patch) {
@@ -71,6 +87,7 @@ export function createStore(file = ":memory:", instance = "test") {
         kind,
         id,
       );
+      writes += 1;
       return row;
     },
     transaction(fn) {
@@ -96,6 +113,16 @@ export function createStore(file = ":memory:", instance = "test") {
         entity,
         details,
       });
+    },
+    /** Inserts and updates made so far; a hosted snapshot is saved only when this moved. */
+    get writes() {
+      return writes;
+    },
+    exportRows() {
+      return db
+        .prepare("SELECT kind, id, data FROM records ORDER BY rowid")
+        .all()
+        .map((row) => ({ kind: row.kind, id: row.id, data: JSON.parse(row.data) }));
     },
     close() {
       db.close();

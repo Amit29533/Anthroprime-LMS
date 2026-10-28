@@ -88,6 +88,34 @@ A course page shows a banner, a progress card (lessons, incomplete, completed) a
 
 Opening a lesson enters a full-window player with a collapsible course outline. Each lesson is a single readable page: the full text, a highlighted learning goal, structured lists, sources as footnotes, an **On this page** list on wide screens and a reading-progress bar. Nothing is hidden behind a disclosure. Each knowledge check has an introduction (questions, pass mark, attempts), one question at a time, and a results screen with a score ring, a pass or not-yet badge and a red/green review with explanations. **Notes** keeps per-lesson notes in the browser (this device only). The **Full screen** control uses browser full screen when supported, with an expanded-window fallback; **Esc** or **Exit full screen** returns. Presentation changes preserve existing course snapshots and candidate progress.
 
+## Deploy on Netlify
+
+`netlify.toml` publishes `public` as static pages and runs one function (`netlify/functions/api.mjs`) for `/api/*` and `/health`. A function has no durable disk, so learning data lives in Netlify Blobs: each request loads the dataset into an in-memory store and a request that changed something saves it back only if no other request saved first (otherwise it is replayed on the newer data). Deploy previews and branch deploys use their own Blobs store, never the live one.
+
+1. In Netlify, import the repository. The build settings come from `netlify.toml`; leave them as they are.
+2. Add these environment variables (scope: Functions and Runtime):
+
+   | Variable | Value |
+   |---|---|
+   | `EOD_API_URL` | `https://ecod.anthroprime.com/api` |
+   | `EOD_WEB_URL` | `https://ecod.anthroprime.com` |
+   | `LMS_SESSION_KEY` | 64 hexadecimal characters: `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` |
+   | `APP_ORIGIN` | Optional. The LMS address, for example `https://learning.anthroprime.com`. Without it the address the browser used is accepted. |
+
+3. Deploy, then set `LMS_WEB_URL` on the ECOD site to the LMS address and redeploy ECOD, so its Training Dashboard can reach the LMS.
+4. Publish the RSA course once (safe to re-run):
+
+   ```powershell
+   $env:LMS_URL = 'https://learning.anthroprime.com'
+   $env:EOD_API_URL = 'https://ecod.anthroprime.com/api'
+   $env:ECOD_ADMIN_PASSWORD = '<ECOD administrator password>'
+   npm run publish:rsa
+   ```
+
+5. Invite candidates and assign the course from ECOD's **Training Dashboard**.
+
+The whole dataset is one blob, which suits a training cohort (hundreds of candidates). The sign-in limit is per function instance on Netlify, so ECOD's own throttle remains the main defence against password guessing.
+
 ## Deployment boundary
 
 The Dockerfile targets a single persistent Node service behind an HTTPS reverse proxy. Mount `/app/data` on a durable volume. Do not use ephemeral function storage or independent database copies across replicas. The Docker image has not been built or deployed during local verification.
