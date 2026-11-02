@@ -1,5 +1,5 @@
 # Anthroprime LMS on Netlify: static pages from `public` plus one function
-# (netlify/functions/api.mjs) for /api/* and /health. No build step is needed.
+# (netlify/functions/api.mjs) for /api/*, /health and authenticated /interactive/*. No build step is needed.
 [build]
   publish = "public"
   functions = "netlify/functions"
@@ -10,14 +10,15 @@
 
 [functions]
   node_bundler = "esbuild"
+  included_files = ["content/interactive/**"]
 
 [[headers]]
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
+    X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=31536000"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src https:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src https:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; form-action 'self'"
     Cache-Control = "no-cache"

@@ -2,6 +2,7 @@ import { getStore } from "@netlify/blobs";
 import { createSessions } from "../../src/session.mjs";
 import { createEodClient } from "../../src/integrations/eod.mjs";
 import { createApp } from "../../src/app.mjs";
+import { interactiveAsset } from "../../src/interactive.mjs";
 import { createBlobRunner } from "../../src/blob-store.mjs";
 import {
   MAX_BODY_BYTES,
@@ -11,7 +12,7 @@ import {
 } from "../../src/gateway.mjs";
 
 /**
- * Netlify Function for every /api/* request and /health. Static pages are
+ * Netlify Function for /api/*, /health and private /interactive/* assets. Static pages are
  * served from `public` by Netlify itself (see netlify.toml). Learning data is
  * kept in Netlify Blobs, because a function has no durable disk.
  */
@@ -74,6 +75,10 @@ export function createHandler({
       });
     }
     try {
+      if (url.pathname.startsWith("/interactive/")) {
+        const result = await interactiveAsset({ pathname: url.pathname, method: req.method, headers: Object.fromEntries(req.headers), app: setup.app });
+        return new Response(req.method === "HEAD" ? null : result.body, { status: result.status, headers: { ...SECURITY_HEADERS, "strict-transport-security": "max-age=31536000", ...result.headers } });
+      }
       const result = await handleApi({
         method: req.method,
         pathname: url.pathname,
@@ -100,4 +105,4 @@ export function createHandler({
 
 export default createHandler();
 
-export const config = { path: ["/api/*", "/health"] };
+export const config = { path: ["/api/*", "/health", "/interactive/*"] };

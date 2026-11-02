@@ -4,6 +4,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 
 const KINDS = new Set([
+  "activities",
   "courses",
   "paths",
   "enrollments",

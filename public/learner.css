@@ -570,3 +570,93 @@ body.learning-window-open .lx-top { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .learn-layout, .learn-outline, .learner .course-card, .module-chevron .icon { transition: none; }
 }
+
+/* Rich lesson blocks: code boxes, tables, interactive embeds (js/lesson-content.js) */
+
+.lesson-code {
+  margin: 1.25rem 0;
+  border: 1px solid var(--line, #d6dbe1);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--code-bg, #1b2430);
+}
+.lesson-code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c7d0db;
+  font: 600 0.72rem/1.4 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.08em;
+}
+.lesson-code-copy {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #f2f4f6;
+  border-radius: 6px;
+  padding: 0.2rem 0.65rem;
+  font: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.lesson-code-copy:hover { background: rgba(255, 255, 255, 0.1); }
+.lesson-code-copy:focus-visible { outline: 2px solid #e39a5c; outline-offset: 2px; }
+.lesson-code pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  color: #e8ecf1;
+  font: 0.86rem/1.55 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  tab-size: 2;
+}
+.lesson-code code { font: inherit; white-space: pre; }
+
+.lesson-table-wrap {
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--line, #d6dbe1);
+  border-radius: 10px;
+}
+.lesson-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.lesson-table th,
+.lesson-table td {
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line, #e3e7ec);
+}
+.lesson-table th {
+  background: var(--surface-2, #eef1f4);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lesson-table tbody tr:last-child td { border-bottom: 0; }
+
+.lesson-interactive {
+  margin: 1.5rem 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.lesson-interactive iframe {
+  width: 100%;
+  min-height: 300px;
+  height: 900px;
+  border: 1px solid var(--line, #d6dbe1);
+  border-radius: 12px;
+  background: #fff;
+}
+.lesson-interactive-open {
+  justify-self: end;
+  font-size: 0.85rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lesson-table th { background: rgba(255, 255, 255, 0.06); }
+}

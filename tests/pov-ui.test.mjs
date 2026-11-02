@@ -48,6 +48,26 @@ function beginQuiz(view) {
   view.querySelector("#start-quiz").click();
 }
 
+test("RSA practice appears in existing snapshots and activity messages never mark a lesson complete", async (t) => {
+  const { window, view } = domWorld(t);
+  const w = world(t), input = withInlineCheck();
+  input.curriculum[0].lessons[0].id = "rsa-t01-l1";
+  const course = await w.makeCourse(input), enrollment = await w.enroll(course);
+  let writes = 0;
+  const api = async (path, options = {}) => {
+    if (options.method) writes++;
+    return (await w.call("candidate", options.method || "GET", path, options.body)).body;
+  };
+  await player(view, enrollment.id, { api });
+  const frame = view.querySelector("iframe[data-lesson-interactive]");
+  assert.match(frame.src, /\/interactive\/week-1\/index.html#lesson-1$/);
+  window.dispatchEvent(new window.MessageEvent("message", { origin: window.location.origin, source: frame.contentWindow, data: { type: "ecod-interactive", event: "lesson-complete" } }));
+  assert.match(view.querySelector(".lesson-interactive-status").textContent, /Practice badge earned/);
+  assert.equal(writes, 0);
+  assert.deepEqual(w.store.get("enrollments", enrollment.id).progress, {});
+  assert.equal(view.querySelector('[data-lesson="practice"]').disabled, true);
+});
+
 test("reader POV: the whole lesson is on one page, reading never completes it, and full screen retains the workspace and quiz draft", async (t) => {
   const { window, view, document } = domWorld(t);
   const w = world(t); const input = withInlineCheck();

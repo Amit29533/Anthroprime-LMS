@@ -3,10 +3,10 @@ export const MAX_BODY_BYTES = 1000000;
 export const SECURITY_HEADERS = {
   "x-content-type-options": "nosniff",
   "referrer-policy": "strict-origin-when-cross-origin",
-  "x-frame-options": "DENY",
+  "x-frame-options": "SAMEORIGIN",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
   "content-security-policy":
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src https:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src https:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; form-action 'self'",
 };
 
 /** Sign-in attempts per address per minute. Per process, so on a serverless host it is best effort. */

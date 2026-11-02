@@ -41,6 +41,14 @@ The server grades practice; learner responses omit the key and explanation befor
 
 Starting a path atomically creates or reuses its course enrollments. Existing progress is reused. Course order guides the path; prerequisites are enforced between lessons inside each course. The library uses the candidate's finalized tracks for recommendations. Administrators can explicitly assign other published learning.
 
+## Optional interactive practice
+
+The renderer supports escaped fenced code, pipe tables, and an allowlisted same-origin practice embed. T01?T09 RSA lesson IDs map to the matching practice without rewriting frozen enrollment content. Optional practice is separate from server-graded knowledge checks; child-window completion messages update presentation only and cannot complete a lesson.
+
+`content/interactive` is private content, outside `public`. The Node server and Netlify function serve it through a shared asset handler after live ECOD authentication and invitation checks. Netlify includes these files in its function bundle. Responses use private, no-store caching and same-origin framing; the main script/style CSP restrictions remain intact.
+
+Practice records are keyed by ECOD user identity and activity version/module in the existing instance-bound store. The browser loads that account's state before the engine runs; it never imports the old shared localStorage progress. Saves use optimistic versions, validate the viewer identity, and show failures/retry or reload controls. This prevents stale tabs or an account switch from overwriting another learner's state. XP and badges are self-reported practice data, not evidence of assessment performance or the scores shown in Training Dashboard. SQLite and Netlify Blobs persist the same records.
+
 ## Persistence and reassessment
 
 The initial deployment model is **one persistent Node 24 service with SQLite on a durable volume**. WAL, unique enrollment indexes and `BEGIN IMMEDIATE` transactions protect assignments, progress, practice results and audit writes. Audit failure rolls back the local business change. The database is outside the public directory.
@@ -67,7 +75,7 @@ The login throttle is process-local and uses the socket address. A production re
 
 1. Managed media uploads, video captions, downloadable files and content accessibility checks.
 2. OIDC SSO, delegated author/trainer roles and coordinated EOD/LMS deletion.
-3. Rich content, question pools, optional practice rules and enrollment-version migration controls.
+3. Question pools, assessed practice rules and enrollment-version migration controls.
 4. Due dates, reminders, certificates with explicit criteria and outcome comparisons.
 5. Managed database hosting, shared throttling, monitoring and exercised backup restoration.
 

@@ -80,6 +80,10 @@ test("real HTTP transport: shared login, cookie protection, CSRF, limits, header
     );
     assert.equal((await fetch(`${origin}/.env`)).status, 404);
     assert.equal((await fetch(`${origin}/src/app.mjs`)).status, 404);
+    for (const file of ["index.html", "page-2.js"]) {
+      assert.equal((await fetch(`${origin}/interactive/week-1/${file}`)).status, 401);
+    }
+    assert.equal((await fetch(`${origin}/content/interactive/week-1/page-2.js`)).status, 404);
     const font = await fetch(`${origin}/assets/fonts/dm-sans-latin.woff2`);
     assert.equal(font.status, 200);
     assert.equal(font.headers.get("content-type"), "font/woff2");
@@ -124,6 +128,12 @@ test("real HTTP transport: shared login, cookie protection, CSRF, limits, header
     assert.match(login.headers.get("cache-control"), /no-store/);
     assert.equal((await login.json()).token, undefined);
     const cookie = login.headers.get("set-cookie").split(";")[0];
+    for (const file of ["index.html", "page-2.js"]) {
+      const asset = await fetch(`${origin}/interactive/week-1/${file}`, { headers: { cookie } });
+      assert.equal(asset.status, 200);
+      assert.match(asset.headers.get("cache-control"), /private, no-store/);
+      assert.equal(asset.headers.get("x-frame-options"), "SAMEORIGIN");
+    }
     const learning = await fetch(`${origin}/api/learn`, {
       headers: { cookie },
     });
@@ -145,6 +155,11 @@ test("real HTTP transport: shared login, cookie protection, CSRF, limits, header
       headers: { cookie: "anthroprime=forged" },
     });
     assert.equal(forged.status, 401);
+    const revoked = await fetch(`${origin}/api/admin/training/invitations/${(await invite.json()).invitation.id}`, {
+      method: "PUT", headers: { origin, "x-lms-request": "1", cookie: admin.headers.get("set-cookie").split(";")[0] }, body: JSON.stringify({ status: "revoked" }),
+    });
+    assert.equal(revoked.status, 200);
+    assert.equal((await fetch(`${origin}/interactive/week-1/page-2.js`, { headers: { cookie } })).status, 403);
   } finally {
     if (child.exitCode === null) {
       const stopped = once(child, "exit");

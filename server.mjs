@@ -6,6 +6,7 @@ import { createStore } from "./src/store.mjs";
 import { createSessions } from "./src/session.mjs";
 import { createEodClient } from "./src/integrations/eod.mjs";
 import { createApp } from "./src/app.mjs";
+import { interactiveAsset } from "./src/interactive.mjs";
 import {
   MAX_BODY_BYTES,
   SECURITY_HEADERS,
@@ -60,6 +61,11 @@ const server = http.createServer(async (req, res) => {
   };
   try {
     const url = new URL(req.url, origin);
+    if (url.pathname.startsWith("/interactive/")) {
+      const result = await interactiveAsset({ pathname: url.pathname, method: req.method, headers: req.headers, app });
+      res.writeHead(result.status, { ...headers, ...result.headers });
+      return res.end(req.method === "HEAD" ? undefined : result.body);
+    }
     if (url.pathname === "/health")
       return reply(200, {
         ok: true,

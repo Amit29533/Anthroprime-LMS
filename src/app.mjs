@@ -1,4 +1,5 @@
 import { randomUUID, createHash } from "node:crypto";
+import { registerInteractiveRoutes } from "./interactive.mjs";
 import { HttpError } from "./integrations/eod.mjs";
 import { requireInvitation, registerTrainingRoutes, trainingProgress } from "./domain/training.mjs";
 import {
@@ -687,6 +688,7 @@ export function createApp({ store, eod, sessions }) {
     },
   );
   registerTrainingRoutes({ route, store, eod, summary });
+  registerInteractiveRoutes({ route, store, identity, fail });
   // ECOD forwards the current administrator's token only to this bounded API.
   for (const assignmentRoute of ["/integration/training/assign", "/admin/training/assign"]) route("POST", assignmentRoute, "admin", async ({ auth, body }) => {
     const result = await appRequest({ method: "POST", path: "/admin/assign", headers: { cookie: sessions.issue(auth.token).split(";")[0] }, body });
@@ -714,9 +716,9 @@ export function createApp({ store, eod, sessions }) {
         const me = await eod.call("/auth/me", { token });
         if (!me.user || me.user.active === false)
           fail(401, "Your account is unavailable.");
-        if (me.user.role !== matched.role)
+        if (matched.role === "training" ? !["admin", "candidate"].includes(me.user.role) : me.user.role !== matched.role)
           fail(403, "This account does not have access to this workspace.");
-        if (matched.role === "candidate" && !me.user.candidate_id)
+        if (me.user.role === "candidate" && !me.user.candidate_id)
           fail(409, "Your account needs a linked candidate profile.");
         requireInvitation(store, me);
         auth = { token, user: me.user };

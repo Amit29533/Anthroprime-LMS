@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts
 COPY --chown=node:node public ./public
 COPY --chown=node:node src ./src
+COPY --chown=node:node content/interactive ./content/interactive
 COPY --chown=node:node server.mjs ./
 RUN mkdir /app/data && chown node:node /app/data
 USER node

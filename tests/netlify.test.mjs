@@ -120,6 +120,8 @@ test("Netlify function: health, configuration errors, CSRF, sign-in, invite-only
   const blobs = fakeBlobs();
   const names = [];
   const handler = createHandler({ blobsFor: (name) => (names.push(name), blobs) });
+  const asset = (cookie = "", file = "page-2.js") => handler(new Request(`${origin}/interactive/week-1/${file}`, { headers: { cookie } }), context);
+  assert.equal((await asset()).status, 401);
 
   const forged = await read(await request(handler, "/login", { method: "POST", body: {}, headers: { origin: "https://evil.example" } }));
   assert.equal(forged.status, 403);
@@ -139,6 +141,14 @@ test("Netlify function: health, configuration errors, CSRF, sign-in, invite-only
   const coldStart = createHandler({ blobsFor: () => blobs });
   const candidate = await read(await request(coldStart, "/login", signIn));
   assert.equal(candidate.status, 200);
+  const practice = await asset(candidate.cookie);
+  assert.equal(practice.status, 200);
+  assert.match(practice.headers.get("cache-control"), /private, no-store/);
+  assert.match(await practice.text(), /LESSONS/);
+  const progress = await read(await request(handler, "/interactive/state/week-1", { cookie: candidate.cookie }));
+  assert.equal((await request(handler, "/interactive/state/week-1", { method: "PUT", cookie: candidate.cookie, body: { ...progress.body, state: { xp: 5, done: {}, badges: {} } } })).status, 200);
+  const persisted = await read(await request(coldStart, "/interactive/state/week-1", { cookie: candidate.cookie }));
+  assert.equal(persisted.body.state.xp, 5, "practice survives Netlify cold starts");
   const learn = await read(await request(coldStart, "/learn", { cookie: candidate.cookie }));
   assert.equal(learn.status, 200);
   assert.deepEqual(names, ["anthroprime-lms"]);
@@ -146,4 +156,7 @@ test("Netlify function: health, configuration errors, CSRF, sign-in, invite-only
 
   const huge = await read(await request(handler, "/admin/training/invitations", { method: "POST", body: { email: "x".repeat(1000001) }, cookie: admin.cookie }));
   assert.equal(huge.status, 413);
+  assert.equal((await request(handler, `/admin/training/invitations/${invited.body.invitation.id}`, { method: "PUT", cookie: admin.cookie, body: { status: "revoked" } })).status, 200);
+  assert.equal((await asset(candidate.cookie, "index.html")).status, 403);
+  assert.equal((await asset(candidate.cookie)).status, 403);
 });

@@ -1,5 +1,6 @@
 import { api as defaultApi, esc, icon, progress, tag, action } from "./ui.js";
-import { lessonContent } from "./lesson-content.js";
+import { lessonContent, bindRichLessons } from "./lesson-content.js";
+import { rsaInteractivePath } from "./interactive-catalog.js";
 import { passNeeded } from "./course-overview.js";
 
 const score = (value) => Number.isFinite(value) ? `${value}%` : "—";
@@ -52,6 +53,7 @@ export async function player(view, id, { api = defaultApi, eodUrl = "" } = {}) {
   document.body.classList.add("learning-window-open");
   view.innerHTML = '<section id="learning-workspace" class="learning-workspace" aria-label="Course learning window"><header class="learn-toolbar"></header><div class="learn-layout"><aside class="learn-outline" id="learn-outline" aria-label="Course contents"></aside><button class="learn-outline-scrim" aria-label="Close course outline" hidden></button><div class="learn-stage"><div class="learn-progressbar" aria-hidden="true"><span></span></div><div class="learn-scroll"></div><footer class="learn-footer"></footer></div><aside class="learn-notes" id="learn-notes" aria-label="My notes" hidden></aside></div><p class="learn-notice" role="status" hidden></p></section>';
   const workspace = view.querySelector("#learning-workspace");
+  const releaseRichLessons = bindRichLessons(workspace);
   const scroller = workspace.querySelector(".learn-scroll");
   const mobile = () => window.matchMedia?.("(max-width: 900px)").matches;
   const setOutline = (open) => {
@@ -114,6 +116,7 @@ export async function player(view, id, { api = defaultApi, eodUrl = "" } = {}) {
   const resize = () => setOutline(mobile() ? false : outlineOpen);
   window.addEventListener("resize", resize);
   releasePlayer = () => {
+    releaseRichLessons();
     document.removeEventListener("fullscreenchange", onFullscreen);
     document.removeEventListener("keydown", onKey);
     window.removeEventListener("resize", resize);
@@ -187,7 +190,9 @@ export async function player(view, id, { api = defaultApi, eodUrl = "" } = {}) {
     if (locked) {
       content = `<div class="reader-empty">${icon("lock")}<h1 id="lesson-title" tabindex="-1">Finish the earlier lessons first</h1><p>Lessons unlock in order. Your progress is saved, so you can pick up right where you left off.</p><button id="resume-lesson" class="button primary">Go to my current lesson ${icon("arrow")}</button></div>`;
     } else if (mode === "read") {
-      const body = lessonContent(lesson.body || "");
+      const practice = rsaInteractivePath(lesson.id);
+      const text = lesson.body || "";
+      const body = lessonContent(practice && !/^::interactive\s/m.test(text) ? `${text}\n\n## Optional practice\n\n::interactive ${practice}` : text);
       const media = `${lesson.kind === "video" && lesson.resource_url ? `<video class="lesson-video" controls preload="metadata" src="${esc(lesson.resource_url)}"></video>` : ""}${["video", "resource"].includes(lesson.kind) && lesson.resource_url ? `<a class="button outline" href="${esc(lesson.resource_url)}" target="_blank" rel="noopener noreferrer">Open resource ${icon("external")}</a>` : ""}`;
       const lessonNumber = module.lessons.indexOf(lesson) + 1;
       const end = lesson.quiz
