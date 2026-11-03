@@ -59,10 +59,38 @@ export function registerTrainingRoutes({ route, store, eod, summary }) {
         return { id: candidate.id, name: candidate.name, email: accounts[0]?.email || "",
           access: invitation?.status === "active" ? (invitation.first_access_at ? "active" : "invited") : invitation?.status || "not_invited",
           invitation_id: invitation?.id || "", has_account: accounts.length > 0,
-          enrollments: rows.filter((r) => r.candidate_id === candidate.id).map((r) => ({ ...summary(r), training: trainingProgress(r), updated_at: r.updated_at })),
+          enrollments: rows.filter((r) => r.candidate_id === candidate.id).map((r) => ({ ...summary(r), training: trainingProgress(r), updated_at: r.updated_at, outdated: outdated(r) })),
         };
       }),
     };
+  };
+  // An assignment keeps the course version it was given. These two helpers let an
+  // administrator move it onto the latest published version without losing progress.
+  const version = (course) => course?.updated_at || course?.created_at || "";
+  const outdated = (row) => {
+    const course = store.get("courses", row.course_id);
+    return Boolean(course && course.status === "published" && version(course) !== version(row.course_snapshot));
+  };
+  const refresh = async ({ auth, params }) => {
+    const row = store.get("enrollments", params.id);
+    if (!row) throw new HttpError(404, "Assignment not found.");
+    const course = store.get("courses", row.course_id);
+    if (!course || course.status !== "published") throw new HttpError(409, "Publish the course before updating assignments to its latest version.");
+    const ids = new Set(lessonsIn(course).map((lesson) => lesson.id));
+    const keep = (record = {}) => Object.fromEntries(Object.entries(record).filter(([id]) => ids.has(id)));
+    return store.transaction(() => {
+      const progress = keep(row.progress), quiz_attempts = keep(row.quiz_attempts);
+      const complete = ids.size > 0 && [...ids].every((id) => progress[id]?.completed_at);
+      const updated = store.update("enrollments", row.id, {
+        course_snapshot: course, progress, quiz_attempts,
+        completed_at: complete ? row.completed_at || new Date().toISOString() : "",
+      });
+      const dropped = Object.keys(row.progress || {}).filter((id) => !ids.has(id)).length;
+      store.audit(auth.user, "course_version_updated", row.id, { course: course.title, candidate_id: row.candidate_id, dropped_lessons: dropped });
+      return { enrollment: summary(updated), notice: dropped
+        ? `Updated to the latest version. Progress on ${dropped} lesson(s) that no longer exist was removed; everything else is kept.`
+        : "Updated to the latest version. Progress is kept." };
+    });
   };
   const invite = async ({ auth, body }) => {
     const email = normalizeEmail(body.email);
@@ -95,5 +123,6 @@ export function registerTrainingRoutes({ route, store, eod, summary }) {
     route("GET", prefix, "admin", overview);
     route("POST", `${prefix}/invitations`, "admin", invite);
     route("PUT", `${prefix}/invitations/:id`, "admin", change);
+    route("PUT", `${prefix}/enrollments/:id/refresh`, "admin", refresh);
   }
 }
