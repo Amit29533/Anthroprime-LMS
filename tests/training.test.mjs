@@ -95,3 +95,31 @@ test("inline lesson checks cannot be bypassed; retry and module progress keep fi
   assert.equal((await w.app({ method: "GET", path: "/integration/training", headers: { authorization: `Bearer ${tokens.candidate}` } })).status, 403);
   assert.equal((await w.app({ method: "GET", path: "/admin/training", headers: { authorization: `Bearer ${tokens.admin}` } })).status, 401, "bearer bridge does not apply to the browser API");
 });
+
+test("admin can move an assignment to the latest published version and keep matching progress", async (t) => {
+  const w = world(t);
+  const course = await w.makeCourse();
+  const enrolled = await w.enroll(course);
+  assert.equal((await w.call("candidate", "POST", `/enrollments/${enrolled.id}/complete`, { lesson_id: "reading" })).status, 200);
+  const outdated = async () => (await w.call("admin", "GET", "/admin/training")).body.candidates.find((c) => c.id === "candidate-one").enrollments[0].outdated;
+  assert.equal(await outdated(), false);
+  const changed = courseInput({ ...course, title: "Governance in practice, revised" });
+  const reading = changed.curriculum[0].lessons[0];
+  changed.curriculum[0].lessons = [reading, { ...reading, id: "new-reading", title: "A new lesson" }];
+  assert.equal((await w.call("admin", "PUT", `/admin/courses/${course.id}`, changed)).status, 200);
+  assert.equal(await outdated(), true);
+  assert.equal((await w.call("candidate", "GET", `/enrollments/${enrolled.id}`)).body.course.title, course.title, "assignments stay frozen until refreshed");
+  assert.equal((await w.call("candidate", "PUT", `/admin/training/enrollments/${enrolled.id}/refresh`, {})).status, 403);
+  assert.equal((await w.call("admin", "PUT", "/admin/training/enrollments/missing/refresh", {})).status, 404);
+  const refreshed = await w.call("admin", "PUT", `/admin/training/enrollments/${enrolled.id}/refresh`, {});
+  assert.equal(refreshed.status, 200);
+  assert.equal(await outdated(), false);
+  const detail = (await w.call("candidate", "GET", `/enrollments/${enrolled.id}`)).body;
+  assert.equal(detail.course.title, "Governance in practice, revised");
+  assert.equal(detail.enrollment.progress.completed, 1, "progress on lessons that still exist is kept");
+  assert.equal(detail.enrollment.progress.total, 2);
+  assert.ok(w.store.list("audit").some((a) => a.action === "course_version_updated" && a.entity === enrolled.id));
+  const latest = w.store.get("courses", course.id);
+  assert.equal((await w.call("admin", "PUT", `/admin/courses/${course.id}`, courseInput({ ...latest, curriculum: changed.curriculum, status: "draft" }))).status, 200);
+  assert.equal((await w.call("admin", "PUT", `/admin/training/enrollments/${enrolled.id}/refresh`, {})).status, 409, "drafts are never pushed to learners");
+});
